@@ -1,3 +1,18 @@
+// ---------------------------------------------------------
+// SERVERLESS FIX: Mock 'canvas' to prevent Vercel crashes
+// ---------------------------------------------------------
+const Module = require('module');
+const originalRequire = Module.prototype.require;
+Module.prototype.require = function (id) {
+    // Block these specific IDs that cause Vercel to fail
+    if (id === 'canvas' || id === '@napi-rs/canvas') {
+        // Return a dummy object to satisfy the require without loading binary
+        return {};
+    }
+    return originalRequire.apply(this, arguments);
+};
+// ---------------------------------------------------------
+
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
