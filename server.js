@@ -2,7 +2,8 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const pdfParse = require('pdf-parse');
+// using legacy build for node environment compatibility
+const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
 const mammoth = require('mammoth');
 const { generateTestPlan } = require('./tools/generate_plan');
 
@@ -35,8 +36,24 @@ app.post('/preview', upload.single('project_file'), async (req, res) => {
 
             if (req.file.mimetype === 'application/pdf') {
                 const dataBuffer = fs.readFileSync(filePath);
-                const data = await pdfParse(dataBuffer);
-                fileContent = data.text;
+
+                // Custom extraction using pdfjs-dist with canvas features disabled
+                const loadingTask = pdfjsLib.getDocument({
+                    data: new Uint8Array(dataBuffer),
+                    disableFontFace: true, // Key to avoiding canvas-related font rendering
+                });
+                const doc = await loadingTask.promise;
+                let extractedText = "";
+
+                for (let i = 1; i <= doc.numPages; i++) {
+                    const page = await doc.getPage(i);
+                    const content = await page.getTextContent();
+                    // Join items with space, but preserve structure roughly
+                    const strings = content.items.map(item => item.str);
+                    extractedText += strings.join(" ") + "\n";
+                }
+                fileContent = extractedText;
+
             } else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
                 const result = await mammoth.extractRawText({ path: filePath });
                 fileContent = result.value;
