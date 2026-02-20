@@ -77,6 +77,21 @@ This project is built using the **B.L.A.S.T.** (Blueprint, Link, Architect, Styl
 
 ---
 
+### Deployment Automation (CI/CD)
+
+This project includes a built-in deployment pipeline.
+
+**To deploy your changes to production:**
+1.  Open PowerShell in the project folder.
+2.  Run the deployment script:
+    ```powershell
+    .\deploy.ps1
+    ```
+3.  Enter a commit message when prompted.
+4.  The script will automatically push to GitHub, which triggers Vercel to build and deploy the new version live.
+
+---
+
 ## ☁️ Deployment
 
 This project is optimized for **Vercel**.
