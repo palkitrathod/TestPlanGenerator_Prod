@@ -1,0 +1,40 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Verify Build (Lint/Structure)
+      run: |
+        echo "Verifying project structure..."
+        ls -la
+        echo "Checking for critical files..."
+        test -f server.js || exit 1
+        test -f public/index.html || exit 1
+        echo "Build Check Passed!"
+
+  deploy-trigger:
+    needs: build-and-check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Acknowledge Vercel Deployment
+        run: echo "Code pushed to main. Vercel will automatically detect this commit and start the production deployment."
