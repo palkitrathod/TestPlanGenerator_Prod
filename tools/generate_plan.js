@@ -1,53 +1,35 @@
 const docx = require('docx');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, BorderStyle } = docx;
 
-// Helper function to create bold text
-function createBoldText(text) {
-    return new TextRun({
-        text: text,
-        bold: true,
-    });
-}
-
-// Helper for standard paragraphs
+// Helper function for new lines
 function createParagraph(text) {
+    if (!text) return new Paragraph("");
+    // Split by newlines to handle textareas properly
+    const lines = text.split('\n');
+    const runs = [];
+    lines.forEach((line, index) => {
+        runs.push(new TextRun(line));
+        if (index < lines.length - 1) {
+            runs.push(new TextRun({ break: 1 }));
+        }
+    });
+
     return new Paragraph({
-        children: [new TextRun(text)],
+        children: runs,
         spacing: { after: 200 },
     });
 }
 
-// Helper for bullet points
-function createBullet(text) {
+function createHeading(text, level) {
     return new Paragraph({
-        children: [new TextRun(text)],
-        bullet: { level: 0 },
+        text: text,
+        heading: level,
+        spacing: { before: 400, after: 200 }, // Better spacing for sections
     });
 }
-
-// Helper for table creation
-function createSimpleTable(rowsArg) {
-    // map string arrays to TableCells
-    const tableRows = rowsArg.map(rowContent =>
-        new TableRow({
-            children: rowContent.map(cellText =>
-                new TableCell({
-                    children: [new Paragraph(cellText)],
-                    width: { size: 100 / rowContent.length, type: WidthType.PERCENTAGE },
-                })
-            )
-        })
-    );
-
-    return new Table({
-        rows: tableRows,
-        width: { size: 100, type: WidthType.PERCENTAGE },
-    });
-}
-
 
 async function generateTestPlan(data) {
-    console.log("Generating Test Plan for:", data.project_name);
+    console.log("Generating Enhanced Test Plan for:", data.project_name);
 
     // Document Sections
     const doc = new Document({
@@ -56,73 +38,59 @@ async function generateTestPlan(data) {
             children: [
                 // 1. Cover Page
                 new Paragraph({
-                    text: `Test Plan for ${data.project_name}`,
+                    text: `TEST PLAN`,
                     heading: HeadingLevel.TITLE,
                     alignment: "center",
-                    spacing: { after: 500 },
+                    spacing: { after: 500, before: 1000 },
                 }),
                 new Paragraph({
-                    children: [new TextRun({ text: "Generated via Test Plan Generator", italics: true })],
+                    text: data.project_name,
+                    heading: HeadingLevel.HEADING_1,
                     alignment: "center",
-                    spacing: { after: 5000 },
+                    spacing: { after: 3000 },
                 }),
-                createSimpleTable([
-                    ["Project Name", data.project_name],
-                    ["Project Type", data.project_type],
-                    ["Project Nature", data.project_nature],
-                    ["Date", new Date().toLocaleDateString()]
-                ]),
-
-                // Page Break
+                new Paragraph({
+                    children: [new TextRun({ text: `Generated: ${new Date().toLocaleDateString()}`, italics: true })],
+                    alignment: "center",
+                }),
                 new Paragraph({ text: "", pageBreakBefore: true }),
 
                 // 2. Introduction
-                new Paragraph({ text: "1. Introduction", heading: HeadingLevel.HEADING_1 }),
-                createParagraph(`The objective of this Test Plan is to define the strategy, scope, resources, and schedule for the ${data.project_nature} of ${data.project_name} (${data.project_type}).`),
-                createParagraph("This document serves as the primary agreement between QA and stakeholders regarding the testing effort."),
+                createHeading("1. INTRODUCTION", HeadingLevel.HEADING_1),
+                createParagraph(data.intro),
 
                 // 3. Scope
-                new Paragraph({ text: "2. Scope", heading: HeadingLevel.HEADING_1 }),
-                createParagraph(`Description: ${data.scope_description}`),
+                createHeading("2. SCOPE", HeadingLevel.HEADING_1),
+                createHeading("2.1 In Scope", HeadingLevel.HEADING_2),
+                createParagraph(data.scope),
 
-                new Paragraph({ text: "2.1 In Scope Features", heading: HeadingLevel.HEADING_2 }),
-                // Using scope description or uploaded file text if available
-                ...(data.uploaded_file_content ?
-                    [createParagraph("Extracted from uploaded document:"), createParagraph(data.uploaded_file_content.substring(0, 500) + "... (truncated for brevity)")] :
-                    [createParagraph("See detailed scope description above.")]
-                ),
+                ...(data.extracted ? [
+                    createHeading("2.2 Additional Requirements (Extracted)", HeadingLevel.HEADING_2),
+                    createParagraph(data.extracted)
+                ] : []),
 
-                new Paragraph({ text: "2.2 Testing Types", heading: HeadingLevel.HEADING_2 }),
-                ...(Array.isArray(data.testing_types) ? data.testing_types.map(type => createBullet(type)) : [createBullet(data.testing_types)]),
+                // 4. Strategy
+                createHeading("3. TEST STRATEGY", HeadingLevel.HEADING_1),
+                createParagraph(data.strategy),
 
-                // 4. Test Strategy
-                new Paragraph({ text: "3. Test Strategy", heading: HeadingLevel.HEADING_1 }),
-                createParagraph(`Methodology: ${data.methodology}`),
-                createParagraph("The testing strategy involves a mix of manual and automated testing (if applicable) to ensure all functional and non-functional requirements are met."),
+                // 5. Environment
+                createHeading("4. TEST ENVIRONMENT & TOOLS", HeadingLevel.HEADING_1),
+                createParagraph(data.environment),
 
-                // 5. Resources
-                new Paragraph({ text: "4. Resources", heading: HeadingLevel.HEADING_1 }),
-                createParagraph(`QA Team Size: ${data.qa_resources} Resource(s)`),
-                createSimpleTable([
-                    ["Role", "Responsibility"],
-                    ["Test Lead", "Strategy, Planning, Reporting"],
-                    ["QA Engineer", "Test Case Creation, Execution"]
-                ]),
+                // 6. Process
+                createHeading("5. TEST PROCESS", HeadingLevel.HEADING_1),
+                createHeading("5.1 Entry Criteria", HeadingLevel.HEADING_2),
+                createParagraph(data.entry_criteria),
+                createHeading("5.2 Exit Criteria", HeadingLevel.HEADING_2),
+                createParagraph(data.exit_criteria),
 
-                // 6. Schedule
-                new Paragraph({ text: "5. Schedule", heading: HeadingLevel.HEADING_1 }),
-                createSimpleTable([
-                    ["Phase", "Date"],
-                    ["Start Date", data.start_date || "TBD"],
-                    ["End Date", data.end_date || "TBD"]
-                ]),
+                // 7. Schedule
+                createHeading("6. SCHEDULE & RESOURCES", HeadingLevel.HEADING_1),
+                createParagraph(data.schedule),
 
-                // 7. Deliverables
-                new Paragraph({ text: "6. Deliverables", heading: HeadingLevel.HEADING_1 }),
-                createBullet("Test Plan (This Document)"),
-                createBullet("Test Cases (Excel/Test Management Tool)"),
-                createBullet("Defect Reports (Jira)"),
-                createBullet("Test Summary Report")
+                // 8. Deliverables
+                createHeading("7. DELIVERABLES", HeadingLevel.HEADING_1),
+                createParagraph(data.deliverables),
             ],
         }],
     });
