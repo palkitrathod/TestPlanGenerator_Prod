@@ -25,8 +25,8 @@ const { generateTestPlan } = require('./tools/generate_plan');
 const app = express();
 const port = 3000;
 
-// Configure Multer for uploads
-const upload = multer({ dest: '.tmp/uploads/' });
+// Configure Multer for uploads (Use /tmp for Vercel/Serverless)
+const upload = multer({ dest: '/tmp/' });
 
 // Middleware
 app.use(express.static('public'));
