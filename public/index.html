@@ -306,6 +306,216 @@
                 transform: translateY(0);
             }
         }
+
+        /* ========= JIRA PANEL STYLES ========= */
+        .jira-panel {
+            background: linear-gradient(135deg, #1a1f3a 0%, #0f172a 100%);
+            border-radius: 16px;
+            padding: 24px 28px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(79, 70, 229, 0.35);
+            box-shadow: 0 4px 24px rgba(79, 70, 229, 0.12);
+            animation: fadeInDown 0.5s ease-out;
+        }
+
+        .jira-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .jira-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #e2e8f0;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .jira-logo-badge {
+            background: linear-gradient(135deg, #0052CC, #2684FF);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            letter-spacing: 0.05em;
+        }
+
+        .jira-panel-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #94a3b8;
+            border-radius: 8px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .jira-panel-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .jira-panel-body {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .jira-panel-body.open {
+            display: block;
+            animation: fadeInDown 0.3s ease-out;
+        }
+
+        .jira-input {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #e2e8f0;
+            padding: 0.6rem 0.9rem;
+            font-size: 0.9rem;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .jira-input::placeholder {
+            color: #64748b;
+        }
+
+        .jira-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .jira-label {
+            color: #94a3b8;
+            font-size: 0.82rem;
+            font-weight: 500;
+            margin-bottom: 0.35rem;
+            display: block;
+        }
+
+        .btn-jira-fetch {
+            background: linear-gradient(135deg, #0052CC 0%, #2684FF 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 11px 28px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 82, 204, 0.4);
+        }
+
+        .btn-jira-fetch:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 82, 204, 0.5);
+        }
+
+        .btn-jira-fetch:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .jira-ticket-card {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .jira-ticket-card.visible {
+            display: block;
+            animation: fadeInDown 0.4s ease-out;
+        }
+
+        .jira-ticket-key {
+            color: #6366f1;
+            font-weight: 700;
+            font-size: 0.9rem;
+            font-family: monospace;
+        }
+
+        .jira-ticket-summary {
+            color: #e2e8f0;
+            font-weight: 600;
+            font-size: 1rem;
+            margin: 4px 0 10px;
+            line-height: 1.4;
+        }
+
+        .jira-meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .jira-meta-pill {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-size: 0.78rem;
+            color: #94a3b8;
+        }
+
+        .jira-meta-pill span {
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        .jira-success-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #4ade80;
+            font-size: 0.88rem;
+            font-weight: 500;
+            margin-top: 14px;
+        }
+
+        .jira-error-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #f87171;
+            font-size: 0.88rem;
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        .jira-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0 0;
+            color: #475569;
+            font-size: 0.78rem;
+        }
+
+        .jira-divider::before,
+        .jira-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+        }
     </style>
 </head>
 
@@ -316,6 +526,67 @@
         <div class="app-header">
             <h1><i class="fas fa-rocket"></i> Test Plan Generator</h1>
             <p>Developed by Palkit Rathod</p>
+        </div>
+
+        <!-- ===== JIRA IMPORT PANEL ===== -->
+        <div class="jira-panel" id="jiraPanel">
+            <div class="jira-panel-header" onclick="toggleJiraPanel()" id="jiraPanelHeader">
+                <div class="jira-panel-title">
+                    <span class="jira-logo-badge">JIRA</span>
+                    <span>Import from JIRA Ticket</span>
+                    <span style="color:#64748b; font-size:0.82rem; font-weight:400;">Auto-fill form from your JIRA
+                        issue</span>
+                </div>
+                <button class="jira-panel-toggle" id="jiraToggleBtn"><i class="fas fa-chevron-down"
+                        id="jiraChevron"></i></button>
+            </div>
+
+            <div class="jira-panel-body" id="jiraPanelBody">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-5">
+                        <label class="jira-label"><i class="fas fa-globe fa-xs me-1"></i>JIRA Base URL</label>
+                        <input type="url" class="jira-input" id="jiraUrl"
+                            placeholder="https://yourcompany.atlassian.net" autocomplete="off">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="jira-label"><i class="fas fa-ticket-alt fa-xs me-1"></i>Issue Key</label>
+                        <input type="text" class="jira-input" id="jiraIssueKey" placeholder="e.g. PROJ-123"
+                            autocomplete="off">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="jira-label"><i class="fas fa-envelope fa-xs me-1"></i>Email</label>
+                        <input type="email" class="jira-input" id="jiraEmail" placeholder="you@company.com"
+                            autocomplete="off">
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="jira-label"><i class="fas fa-key fa-xs me-1"></i>API Token
+                            <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank"
+                                style="color:#6366f1; font-size:0.75rem; margin-left:6px;">Get token ↗</a>
+                        </label>
+                        <input type="password" class="jira-input" id="jiraToken" placeholder="Your Atlassian API Token"
+                            autocomplete="off">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button class="btn-jira-fetch" id="btnFetchJira" onclick="fetchFromJira()">
+                            <i class="fas fa-cloud-download-alt"></i> Import
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Status / Error -->
+                <div id="jiraStatusBar"></div>
+
+                <!-- Ticket Preview Card -->
+                <div class="jira-ticket-card" id="jiraTicketCard">
+                    <div class="jira-ticket-key" id="jiraCardKey"></div>
+                    <div class="jira-ticket-summary" id="jiraCardSummary"></div>
+                    <div class="jira-meta-row" id="jiraCardMeta"></div>
+                </div>
+
+                <div class="jira-divider">Credentials are stored locally in your browser only</div>
+            </div>
         </div>
 
         <!-- Input Form -->
@@ -587,6 +858,135 @@
     </div>
 
     <script>
+        // ============================================================
+        // JIRA PANEL
+        // ============================================================
+        (function loadSavedCredentials() {
+            const saved = JSON.parse(localStorage.getItem('jira_creds') || '{}');
+            if (saved.url) document.getElementById('jiraUrl').value = saved.url;
+            if (saved.email) document.getElementById('jiraEmail').value = saved.email;
+            if (saved.token) document.getElementById('jiraToken').value = saved.token;
+        })();
+
+        function toggleJiraPanel() {
+            const body = document.getElementById('jiraPanelBody');
+            const chevron = document.getElementById('jiraChevron');
+            const isOpen = body.classList.contains('open');
+            body.classList.toggle('open', !isOpen);
+            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+
+        async function fetchFromJira() {
+            const jiraUrl = document.getElementById('jiraUrl').value.trim();
+            const issueKey = document.getElementById('jiraIssueKey').value.trim().toUpperCase();
+            const email = document.getElementById('jiraEmail').value.trim();
+            const token = document.getElementById('jiraToken').value.trim();
+            const statusEl = document.getElementById('jiraStatusBar');
+            const btn = document.getElementById('btnFetchJira');
+
+            statusEl.innerHTML = '';
+            document.getElementById('jiraTicketCard').classList.remove('visible');
+
+            if (!jiraUrl || !issueKey || !email || !token) {
+                statusEl.innerHTML = `<div class="jira-error-bar"><i class="fas fa-exclamation-circle"></i> Please fill in all four JIRA fields.</div>`;
+                return;
+            }
+
+            // Save credentials (no token saved for security — optional)
+            localStorage.setItem('jira_creds', JSON.stringify({ url: jiraUrl, email }));
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status"></span> Fetching...`;
+
+            try {
+                const response = await fetch('/fetch-jira', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jira_url: jiraUrl,
+                        email,
+                        api_token: token,
+                        issue_key: issueKey
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || `Server error ${response.status}`);
+                }
+
+                // ---- Auto-fill Main Form ----
+                autoFillForm(data);
+
+                // ---- Show ticket preview card ----
+                showJiraCard(data, issueKey);
+
+                statusEl.innerHTML = `<div class="jira-success-bar"><i class="fas fa-check-circle"></i> Successfully imported! Form has been auto-filled. You can edit any field below.</div>`;
+
+            } catch (err) {
+                statusEl.innerHTML = `<div class="jira-error-bar"><i class="fas fa-times-circle"></i> ${err.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-cloud-download-alt"></i> Import`;
+            }
+        }
+
+        function autoFillForm(data) {
+            const f = document.forms['planForm'];
+
+            // Core fields
+            if (data.project_name) f.project_name.value = data.project_name;
+            if (data.meta && data.meta.summary) f.objective.value = data.meta.summary;
+
+            // Scope
+            if (data.inscope) f.in_scope.value = data.inscope;
+            if (data.outscope) f.out_scope.value = data.outscope;
+
+            // Assumptions
+            if (data.assumptions) f.assumptions.value = data.assumptions;
+
+            // Risks
+            if (data.risks) f.risks.value = data.risks;
+
+            // Dates
+            if (data.meta && data.meta.dueDate) {
+                // Set end date to due date if available
+                f.end_date.value = data.meta.dueDate;
+            }
+
+            // RTM
+            if (data.jira_issue_key && data.jira_base_url) {
+                f.rtm_ref.value = `${data.jira_base_url}/browse/${data.jira_issue_key}`;
+            }
+
+            // Scroll to form
+            document.getElementById('inputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function showJiraCard(data, issueKey) {
+            const card = document.getElementById('jiraTicketCard');
+            document.getElementById('jiraCardKey').textContent = issueKey;
+            document.getElementById('jiraCardSummary').textContent = data.meta.summary || '';
+
+            const meta = data.meta;
+            const pills = [
+                { label: 'Type', value: meta.issueType },
+                { label: 'Status', value: meta.status },
+                { label: 'Priority', value: meta.priority },
+                { label: 'Assignee', value: meta.assignee },
+                { label: 'Fix Ver.', value: meta.fixVersions },
+                { label: 'Points', value: meta.storyPoints },
+                { label: 'Components', value: meta.components },
+            ].filter(p => p.value && p.value !== 'N/A');
+
+            document.getElementById('jiraCardMeta').innerHTML = pills
+                .map(p => `<div class="jira-meta-pill">${p.label}: <span>${p.value}</span></div>`)
+                .join('');
+
+            card.classList.add('visible');
+        }
+
         function toggleAuto() {
             const check = document.getElementById('cAuto');
             document.getElementById('autoDetails').style.display = check.checked ? 'flex' : 'none';

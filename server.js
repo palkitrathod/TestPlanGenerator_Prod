@@ -21,6 +21,7 @@ const fs = require('fs');
 const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
 const mammoth = require('mammoth');
 const { generateTestPlan } = require('./tools/generate_plan');
+const { fetchJiraTicket } = require('./tools/jira_reader');
 
 const app = express();
 const port = 3000;
@@ -90,6 +91,26 @@ app.post('/preview', upload.single('project_file'), async (req, res) => {
     } catch (error) {
         console.error("Error generating preview:", error);
         res.status(500).json({ error: "Error generating preview." });
+    }
+});
+
+
+// Step 1b: Fetch JIRA Ticket & Map to Test Plan
+app.post('/fetch-jira', async (req, res) => {
+    try {
+        const { jira_url, email, api_token, issue_key } = req.body;
+
+        if (!jira_url || !email || !api_token || !issue_key) {
+            return res.status(400).json({ error: 'Missing required fields: jira_url, email, api_token, issue_key' });
+        }
+
+        console.log(`Fetching JIRA ticket: ${issue_key} from ${jira_url}`);
+        const planData = await fetchJiraTicket(jira_url, email, api_token, issue_key);
+
+        res.json(planData);
+    } catch (error) {
+        console.error('Error fetching JIRA ticket:', error.message);
+        res.status(500).json({ error: error.message || 'Failed to fetch JIRA ticket.' });
     }
 });
 
