@@ -1,1098 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Plan.ai | Professional Generator</title>
-    <!-- Fonts: Outfit (Headings) & Inter (Body) -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
-        rel="stylesheet">
-    <!-- Bootstrap 5 -->
+    <title>TestPlan.ai | Premium Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        :root {
-            --bg-gradient: linear-gradient(135deg, #f0f4ff 0%, #e2e8f0 100%);
-            --accent-color: #4f46e5;
-            --accent-hover: #4338ca;
-            --text-heading: #1e293b;
-            --text-body: #475569;
-            --card-surface: #ffffff;
-            --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-gradient);
-            color: var(--text-body);
-            min-height: 100vh;
-            padding: 30px 0;
-        }
-
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            font-family: 'Outfit', sans-serif;
-            color: var(--text-heading);
-        }
-
-        .app-header {
-            text-align: center;
-            margin-bottom: 2rem;
-            animation: fadeInDown 0.6s ease-out;
-        }
-
-        .app-header h1 {
-            font-weight: 700;
-            font-size: 2.5rem;
-            letter-spacing: -0.03em;
-            background: linear-gradient(to right, #4f46e5, #ec4899);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .app-header p {
-            font-size: 1.1rem;
-            color: #64748b;
-            margin-top: 0.5rem;
-        }
-
-        .wizard-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .main-card {
-            background: var(--card-surface);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: var(--shadow-soft);
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.8);
-        }
-
-        /* Decorative Elements */
-        .main-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 6px;
-            background: linear-gradient(90deg, #4f46e5, #8b5cf6, #ec4899);
-        }
-
-        .form-section {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            border: 1px solid #e2e8f0;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .form-section:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-            border-color: #cbd5e1;
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 12px;
-        }
-
-        .section-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: #e0e7ff;
-            color: var(--accent-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .form-label {
-            font-weight: 500;
-            font-size: 0.9rem;
-            color: #334155;
-            margin-bottom: 0.4rem;
-        }
-
-        .form-control,
-        .form-select {
-            border-radius: 8px;
-            border: 1px solid #cbd5e1;
-            padding: 0.6rem 0.9rem;
-            font-size: 0.95rem;
-            background-color: #fff;
-            transition: all 0.2s;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-            outline: none;
-        }
-
-        /* Custom Checkboxes */
-        .custom-check-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .custom-check-item {
-            position: relative;
-        }
-
-        .custom-check-input {
-            position: absolute;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .custom-check-label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid #cbd5e1;
-            background: #fff;
-            color: #475569;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            user-select: none;
-        }
-
-        .custom-check-input:checked+.custom-check-label {
-            background: #eef2ff;
-            border-color: var(--accent-color);
-            color: var(--accent-color);
-        }
-
-        .custom-check-input:checked+.custom-check-label i {
-            transform: scale(1.1);
-        }
-
-        .btn-generate {
-            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 16px;
-            width: 100%;
-            color: white;
-            font-weight: 600;
-            font-size: 1.1rem;
-            letter-spacing: 0.02em;
-            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
-            transition: all 0.2s;
-        }
-
-        .btn-generate:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);
-        }
-
-        /* Preview Area */
-        .doc-preview-container {
-            background: #525659;
-            padding: 40px;
-            border-radius: 12px;
-            margin-top: 2rem;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .doc-paper {
-            background: white;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 60px;
-            min-height: 1000px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            font-family: 'Times New Roman', serif;
-            color: #000;
-        }
-
-        .doc-paper h1.doc-title {
-            text-align: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
-            margin-bottom: 40px;
-            font-family: Arial, sans-serif;
-            font-weight: bold;
-        }
-
-        .doc-heading {
-            font-family: Arial, sans-serif;
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            color: #2c3e50;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
-        }
-
-        .doc-textarea {
-            width: 100%;
-            border: 1px dashed transparent;
-            resize: vertical;
-            overflow: hidden;
-            font-family: inherit;
-            font-size: 1rem;
-            line-height: 1.5;
-            padding: 5px;
-            background: transparent;
-        }
-
-        .doc-textarea:hover,
-        .doc-textarea:focus {
-            border-color: #cbd5e1;
-            background: #f8fafc;
-            outline: none;
-        }
-
-        #loadingOverlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            z-index: 9999;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* ========= JIRA PANEL STYLES ========= */
-        .jira-panel {
-            background: linear-gradient(135deg, #1a1f3a 0%, #0f172a 100%);
-            border-radius: 16px;
-            padding: 24px 28px;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(79, 70, 229, 0.35);
-            box-shadow: 0 4px 24px rgba(79, 70, 229, 0.12);
-            animation: fadeInDown 0.5s ease-out;
-        }
-
-        .jira-panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .jira-panel-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #e2e8f0;
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .jira-logo-badge {
-            background: linear-gradient(135deg, #0052CC, #2684FF);
-            color: white;
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 6px;
-            letter-spacing: 0.05em;
-        }
-
-        .jira-panel-toggle {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: #94a3b8;
-            border-radius: 8px;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .jira-panel-toggle:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-
-        .jira-panel-body {
-            margin-top: 20px;
-            display: none;
-        }
-
-        .jira-panel-body.open {
-            display: block;
-            animation: fadeInDown 0.3s ease-out;
-        }
-
-        .jira-input {
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            color: #e2e8f0;
-            padding: 0.6rem 0.9rem;
-            font-size: 0.9rem;
-            width: 100%;
-            transition: all 0.2s;
-        }
-
-        .jira-input::placeholder {
-            color: #64748b;
-        }
-
-        .jira-input:focus {
-            outline: none;
-            border-color: #6366f1;
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        .jira-label {
-            color: #94a3b8;
-            font-size: 0.82rem;
-            font-weight: 500;
-            margin-bottom: 0.35rem;
-            display: block;
-        }
-
-        .btn-jira-fetch {
-            background: linear-gradient(135deg, #0052CC 0%, #2684FF 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            padding: 11px 28px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.25s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(0, 82, 204, 0.4);
-        }
-
-        .btn-jira-fetch:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 82, 204, 0.5);
-        }
-
-        .btn-jira-fetch:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .jira-ticket-card {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            border-radius: 10px;
-            padding: 14px 18px;
-            margin-top: 16px;
-            display: none;
-        }
-
-        .jira-ticket-card.visible {
-            display: block;
-            animation: fadeInDown 0.4s ease-out;
-        }
-
-        .jira-ticket-key {
-            color: #6366f1;
-            font-weight: 700;
-            font-size: 0.9rem;
-            font-family: monospace;
-        }
-
-        .jira-ticket-summary {
-            color: #e2e8f0;
-            font-weight: 600;
-            font-size: 1rem;
-            margin: 4px 0 10px;
-            line-height: 1.4;
-        }
-
-        .jira-meta-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .jira-meta-pill {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            padding: 3px 10px;
-            font-size: 0.78rem;
-            color: #94a3b8;
-        }
-
-        .jira-meta-pill span {
-            color: #cbd5e1;
-            font-weight: 500;
-        }
-
-        .jira-success-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #4ade80;
-            font-size: 0.88rem;
-            font-weight: 500;
-            margin-top: 14px;
-        }
-
-        .jira-error-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #f87171;
-            font-size: 0.88rem;
-            font-weight: 500;
-            margin-top: 12px;
-        }
-
-        .jira-divider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 20px 0 0;
-            color: #475569;
-            font-size: 0.78rem;
-        }
-
-        .jira-divider::before,
-        .jira-divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.08);
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
 
-    <div class="wizard-container">
+    <div id="loadingOverlay">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3">Generating your Test Plan...</p>
+    </div>
 
-        <div class="app-header">
-            <h1><i class="fas fa-rocket"></i> Test Plan Generator</h1>
-            <p>Developed by Palkit Rathod</p>
-        </div>
+    <div class="app-container">
+        <header class="app-header">
+            <h1><i class="fas fa-microchip"></i> TestPlan.ai</h1>
+            <p>Generate Professional-Grade Test Plans using BLAST protocol</p>
+        </header>
 
-        <!-- ===== JIRA IMPORT PANEL ===== -->
+        <!-- Jira Panel -->
         <div class="jira-panel" id="jiraPanel">
-            <div class="jira-panel-header" onclick="toggleJiraPanel()" id="jiraPanelHeader">
-                <div class="jira-panel-title">
-                    <span class="jira-logo-badge">JIRA</span>
-                    <span>Import from JIRA Ticket</span>
-                    <span style="color:#64748b; font-size:0.82rem; font-weight:400;">Auto-fill form from your JIRA
-                        issue</span>
+            <div class="d-flex justify-content-between align-items-center" onclick="toggleJiraPanel()" style="cursor:pointer">
+                <div>
+                    <span class="badge bg-primary me-2">JIRA</span>
+                    <strong>Import from Jira</strong>
+                    <small class="ms-2 opacity-75">Populate form from ticket</small>
                 </div>
-                <button class="jira-panel-toggle" id="jiraToggleBtn"><i class="fas fa-chevron-down"
-                        id="jiraChevron"></i></button>
+                <i class="fas fa-chevron-down" id="jiraChevron"></i>
             </div>
-
-            <div class="jira-panel-body" id="jiraPanelBody">
-                <div class="row g-3 mb-3">
-                    <div class="col-md-5">
-                        <label class="jira-label"><i class="fas fa-globe fa-xs me-1"></i>JIRA Base URL</label>
-                        <input type="url" class="jira-input" id="jiraUrl"
-                            placeholder="https://yourcompany.atlassian.net" autocomplete="off">
+            <div id="jiraPanelBody" class="mt-3 collapse">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label text-white">Base URL</label>
+                        <input type="url" id="jiraUrl" class="form-control bg-dark text-white border-secondary" placeholder="https://org.atlassian.net">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label text-white">Issue Key</label>
+                        <input type="text" id="jiraIssueKey" class="form-control bg-dark text-white border-secondary" placeholder="PROJ-123">
                     </div>
                     <div class="col-md-3">
-                        <label class="jira-label"><i class="fas fa-ticket-alt fa-xs me-1"></i>Issue Key</label>
-                        <input type="text" class="jira-input" id="jiraIssueKey" placeholder="e.g. PROJ-123"
-                            autocomplete="off">
+                        <label class="form-label text-white">Email</label>
+                        <input type="email" id="jiraEmail" class="form-control bg-dark text-white border-secondary" placeholder="you@org.com">
                     </div>
-                    <div class="col-md-4">
-                        <label class="jira-label"><i class="fas fa-envelope fa-xs me-1"></i>Email</label>
-                        <input type="email" class="jira-input" id="jiraEmail" placeholder="you@company.com"
-                            autocomplete="off">
+                    <div class="col-md-3">
+                        <label class="form-label text-white">API Token</label>
+                        <input type="password" id="jiraToken" class="form-control bg-dark text-white border-secondary">
                     </div>
                 </div>
-                <div class="row g-3">
-                    <div class="col-md-8">
-                        <label class="jira-label"><i class="fas fa-key fa-xs me-1"></i>API Token
-                            <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank"
-                                style="color:#6366f1; font-size:0.75rem; margin-left:6px;">Get token ↗</a>
-                        </label>
-                        <input type="password" class="jira-input" id="jiraToken" placeholder="Your Atlassian API Token"
-                            autocomplete="off">
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button class="btn-jira-fetch" id="btnFetchJira" onclick="fetchFromJira()">
-                            <i class="fas fa-cloud-download-alt"></i> Import
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Status / Error -->
-                <div id="jiraStatusBar"></div>
-
-                <!-- Ticket Preview Card -->
-                <div class="jira-ticket-card" id="jiraTicketCard">
-                    <div class="jira-ticket-key" id="jiraCardKey"></div>
-                    <div class="jira-ticket-summary" id="jiraCardSummary"></div>
-                    <div class="jira-meta-row" id="jiraCardMeta"></div>
-                </div>
-
-                <div class="jira-divider">Credentials are stored locally in your browser only</div>
+                <button class="btn btn-primary mt-3 w-100" onclick="fetchFromJira()">Fetch Data</button>
             </div>
         </div>
 
-        <!-- Input Form -->
-        <div class="main-card form-container" id="inputSection">
+        <main id="inputSection" class="glass-card">
+            <div class="wizard-steps">
+                <div class="step-indicator active" data-step="1">1 <span class="step-label">Project</span></div>
+                <div class="step-indicator" data-step="2">2 <span class="step-label">Scope</span></div>
+                <div class="step-indicator" data-step="3">3 <span class="step-label">Strategy</span></div>
+                <div class="step-indicator" data-step="4">4 <span class="step-label">Gov/Env</span></div>
+                <div class="step-indicator" data-step="5">5 <span class="step-label">Finish</span></div>
+            </div>
+
             <form id="planForm">
-
-                <div class="row">
-                    <!-- Column 1: Core Info -->
-                    <div class="col-lg-6">
-                        <div class="form-section">
-                            <div class="section-header">
-                                <div class="section-icon"><i class="fas fa-info-circle"></i></div>
-                                <h5 class="section-title">1. Project Overview</h5>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Project Name</label>
-                                <input type="text" class="form-control" name="project_name"
-                                    placeholder="e.g. Acme Mobile App V2" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Project Type</label>
-                                <select class="form-select" name="project_type">
-                                    <option>Web Application</option>
-                                    <option>Mobile App (iOS/Android)</option>
-                                    <option>API / Backend</option>
-                                    <option>SaaS Platform</option>
-                                    <option>Desktop Software</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Objective</label>
-                                <textarea class="form-control" name="objective" rows="2"
-                                    placeholder="e.g. Verify stability of new payment gateway integration..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Column 2: Scope -->
-                    <div class="col-lg-6">
-                        <div class="form-section">
-                            <div class="section-header">
-                                <div class="section-icon"><i class="fas fa-bullseye"></i></div>
-                                <h5 class="section-title">2. Scope Definition</h5>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">In-Scope Features</label>
-                                <textarea class="form-control" name="in_scope" rows="3"
-                                    placeholder="List key modules..." required></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Out-of-Scope (Exclusions)</label>
-                                <textarea class="form-control" name="out_scope" rows="2"
-                                    placeholder="e.g. Dark Mode, Legacy Browser Support..."></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Assumptions & Dependencies</label>
-                                <textarea class="form-control" name="assumptions" rows="2"
-                                    placeholder="e.g. Test Data provided by Client..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section 3: Strategy & Automation -->
-                <div class="form-section">
-                    <div class="section-header">
-                        <div class="section-icon"><i class="fas fa-chess"></i></div>
-                        <h5 class="section-title">3. Test Strategy & Plan</h5>
-                    </div>
-
-                    <label class="form-label d-block mb-3">Testing Types Required</label>
-                    <div class="custom-check-group mb-4">
-                        <div class="custom-check-item">
-                            <input type="checkbox" class="custom-check-input" name="types" value="Functional" checked
-                                id="c1">
-                            <label class="custom-check-label" for="c1"><i class="fas fa-check-circle"></i>
-                                Functional</label>
-                        </div>
-                        <div class="custom-check-item">
-                            <input type="checkbox" class="custom-check-input" name="types" value="Regression" id="c2">
-                            <label class="custom-check-label" for="c2"><i class="fas fa-sync"></i> Regression</label>
-                        </div>
-                        <div class="custom-check-item">
-                            <input type="checkbox" class="custom-check-input" name="types" value="API" id="c3">
-                            <label class="custom-check-label" for="c3"><i class="fas fa-network-wired"></i> API</label>
-                        </div>
-                        <div class="custom-check-item">
-                            <input type="checkbox" class="custom-check-input" name="types" value="Performance" id="c4">
-                            <label class="custom-check-label" for="c4"><i class="fas fa-tachometer-alt"></i>
-                                Performance</label>
-                        </div>
-                        <div class="custom-check-item">
-                            <input type="checkbox" class="custom-check-input" name="types" value="Security" id="c5">
-                            <label class="custom-check-label" for="c5"><i class="fas fa-shield-alt"></i>
-                                Security</label>
-                        </div>
-                        <div class="custom-check-item">
-                            <input type="checkbox" class="custom-check-input" name="types" value="UAT" id="c6">
-                            <label class="custom-check-label" for="c6"><i class="fas fa-user-check"></i> UAT
-                                Support</label>
-                        </div>
-                        <div class="custom-check-item">
-                            <input type="checkbox" class="custom-check-input" name="types" value="Automation" id="cAuto"
-                                onchange="toggleAuto()">
-                            <label class="custom-check-label" for="cAuto"><i class="fas fa-robot"></i>
-                                Automation</label>
-                        </div>
-                    </div>
-
-                    <div id="autoDetails" class="row g-3 mb-3"
-                        style="display:none; background: #eef2ff; padding: 15px; border-radius: 8px;">
+                <!-- STEP 1: Project Overview -->
+                <div class="step-content active" data-step="1">
+                    <h4 class="mb-4">1. Project Details</h4>
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <label class="form-label">Automation Tool</label>
-                            <input type="text" class="form-control" name="auto_tool"
-                                placeholder="e.g. Selenium/Cypress">
+                            <label class="form-label">Project Name</label>
+                            <input type="text" name="project_name" class="form-control" placeholder="e.g. Phoenix E-commerce Platform" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Framework</label>
-                            <input type="text" class="form-control" name="auto_framework"
-                                placeholder="e.g. TestNG/PyTest">
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Test Data Strategy</label>
-                            <input type="text" class="form-control" name="test_data"
-                                placeholder="e.g. Synthetic data generated via scripts">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Defect Management Tool</label>
-                            <select class="form-select" name="defect_tool">
-                                <option>Jira</option>
-                                <option>Azure DevOps</option>
-                                <option>Bugzilla</option>
-                                <option>GitHub Issues</option>
+                            <label class="form-label">Project Type</label>
+                            <select name="project_type" class="form-select">
+                                <option>Web Application</option>
+                                <option>Mobile App</option>
+                                <option>API / Microservices</option>
+                                <option>Desktop Application</option>
+                                <option>SaaS Implementation</option>
                             </select>
                         </div>
+                        <div class="col-12">
+                            <label class="form-label">Project Objective</label>
+                            <textarea name="objective" class="form-control" rows="3" placeholder="What are we trying to achieve with this release?"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-5 d-flex justify-content-end">
+                        <button type="button" class="btn btn-primary" data-next-step>Continue <i class="fas fa-arrow-right ms-2"></i></button>
                     </div>
                 </div>
 
-                <!-- Section 4: Governance (New Fields) -->
-                <div class="form-section">
-                    <div class="section-header">
-                        <div class="section-icon"><i class="fas fa-tasks"></i></div>
-                        <h5 class="section-title">4. Governance & Schedule</h5>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">RTM (Traceability)</label>
-                            <input type="text" class="form-control" name="rtm_ref" placeholder="Project ID / Link">
+                <!-- STEP 2: Scope Definition -->
+                <div class="step-content" data-step="2">
+                    <h4 class="mb-4">2. Scope Definition</h4>
+                    <div class="row g-4">
+                        <div class="col-md-12">
+                            <label class="form-label">In-Scope Features</label>
+                            <textarea name="in_scope" class="form-control" rows="3" placeholder="Modules, features, or requirements to be tested..." required></textarea>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Entry Criteria</label>
-                            <input type="text" class="form-control" name="entry_criteria"
-                                value="Smoke Test Passed, Env Ready">
+                        <div class="col-md-12">
+                            <label class="form-label">Out-of-Scope (Exclusions)</label>
+                            <textarea name="out_scope" class="form-control" rows="2" placeholder="What will NOT be tested in this cycle?"></textarea>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Exit Criteria</label>
-                            <input type="text" class="form-control" name="exit_criteria"
-                                value="0 Critical Bugs, 100% Executed">
+                        <div class="col-md-12">
+                            <label class="form-label">Assumptions & Dependencies</label>
+                            <textarea name="assumptions" class="form-control" rows="2" placeholder="e.g. Data migration complete by Dev team..."></textarea>
                         </div>
                     </div>
+                    <div class="mt-5 d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline" data-prev-step><i class="fas fa-arrow-left me-2"></i> Back</button>
+                        <button type="button" class="btn btn-primary" data-next-step>Continue <i class="fas fa-arrow-right ms-2"></i></button>
+                    </div>
+                </div>
 
-                    <div class="row mb-3">
+                <!-- STEP 3: Test Strategy & Levels -->
+                <div class="step-content" data-step="3">
+                    <h4 class="mb-4">3. Test Strategy & Levels</h4>
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <label class="form-label">Risks & Mitigation</label>
-                            <textarea class="form-control" name="risks" rows="2"
-                                placeholder="e.g. Risk: Resource unavailability. Mitigation: Backup resource assigned."></textarea>
+                            <label class="form-label">Methodology</label>
+                            <select name="methodology" class="form-select">
+                                <option>Agile (Scrum/Kanban)</option>
+                                <option>Waterfall</option>
+                                <option>V-Model</option>
+                                <option>Hybrid</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Reporting & Metrics</label>
-                            <textarea class="form-control" name="metrics" rows="2"
-                                placeholder="e.g. Weekly Status Rpt, Defect Density, Pass/Fail %"></textarea>
+                            <label class="form-label">Test Levels</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="levels" value="Unit" id="lvl1">
+                                    <label class="form-check-label" for="lvl1">Unit</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="levels" value="Integration" id="lvl2" checked>
+                                    <label class="form-check-label" for="lvl2">Integration</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="levels" value="System" id="lvl3" checked>
+                                    <label class="form-check-label" for="lvl3">System</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="levels" value="UAT" id="lvl4" checked>
+                                    <label class="form-check-label" for="lvl4">UAT</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Automation Approach</label>
+                            <textarea name="automation" class="form-control" rows="2" placeholder="Tooling, framework, and percentage of target automation..."></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Defect Management</label>
+                            <input type="text" name="defect_mgmt" class="form-control" value="Jira for bug tracking, Daily triage calls.">
                         </div>
                     </div>
+                    <div class="mt-5 d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline" data-prev-step><i class="fas fa-arrow-left me-2"></i> Back</button>
+                        <button type="button" class="btn btn-primary" data-next-step>Continue <i class="fas fa-arrow-right ms-2"></i></button>
+                    </div>
+                </div>
 
-                    <div class="row">
-                        <div class="col-md-4">
+                <!-- STEP 4: Governance & Environment -->
+                <div class="step-content" data-step="4">
+                    <h4 class="mb-4">4. Governance & Environment</h4>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Test Environment</label>
+                            <textarea name="test_env" class="form-control" rows="2" placeholder="Hardware, OS, browsers, and mobile devices..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Test Data Strategy</label>
+                            <textarea name="test_data" class="form-control" rows="2" placeholder="How will test data be managed?"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Roles & Responsibilities</label>
+                            <textarea name="roles" class="form-control" rows="2" placeholder="QA Lead: Approval, Testers: Execution, Dev: Fixes..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Suspension & Resumption</label>
+                            <textarea name="suspension" class="form-control" rows="2" placeholder="Criteria to stop/restart testing (e.g. env down)"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-5 d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline" data-prev-step><i class="fas fa-arrow-left me-2"></i> Back</button>
+                        <button type="button" class="btn btn-primary" data-next-step>Continue <i class="fas fa-arrow-right ms-2"></i></button>
+                    </div>
+                </div>
+
+                <!-- STEP 5: Schedule & Upload -->
+                <div class="step-content" data-step="5">
+                    <h4 class="mb-4">5. Delivery & Schedule</h4>
+                    <div class="row g-4">
+                        <div class="col-md-6">
                             <label class="form-label">Start Date</label>
-                            <input type="date" class="form-control" name="start_date" required>
+                            <input type="date" name="start_date" class="form-control" required>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label">End Date</label>
-                            <input type="date" class="form-control" name="end_date" required>
+                            <input type="date" name="end_date" class="form-control" required>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Sign-Off Owner</label>
-                            <input type="text" class="form-control" name="sign_off" placeholder="e.g. QA Lead / PM">
+                        <div class="col-md-12">
+                            <label class="form-label">Test Deliverables</label>
+                            <textarea name="deliverables" class="form-control" rows="2">Test Plan, Test Cases, Execution Report, RTM, Sign-off Email.</textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Upload PRD/BRD Context (Multiple)</label>
+                            <input type="file" name="project_files" class="form-control" multiple accept=".pdf,.doc,.docx,.txt">
+                            <div class="form-text">Uploading documents helps AI extract context for your plan.</div>
                         </div>
                     </div>
-                </div>
-
-                <div class="d-grid gap-2">
-                    <button type="button" onclick="generatePreview()" class="btn-generate">
-                        <i class="fas fa-magic me-2"></i> Generate
-                    </button>
+                    <div class="mt-5 d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline" data-prev-step><i class="fas fa-arrow-left me-2"></i> Back</button>
+                        <button type="button" onclick="generatePreview()" class="btn btn-primary px-5">Generate Plan <i class="fas fa-magic ms-2"></i></button>
+                    </div>
                 </div>
             </form>
-        </div>
+        </main>
 
-        <!-- Preview Section (Initially Hidden) -->
-        <div id="previewSection" style="display:none;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <button class="btn btn-outline-secondary" onclick="showForm()"><i class="fas fa-arrow-left"></i> Back to
-                    Edit</button>
-                <button class="btn btn-success" onclick="downloadDocx()"><i class="fas fa-download"></i> Download
-                    .DOCX</button>
-            </div>
-
-            <div class="doc-preview-container">
-                <div class="doc-paper" id="paperContent">
-                    <h1 class="doc-title">TEST PLAN</h1>
-
-                    <!-- 1. Overview -->
-                    <div class="doc-heading">1. TEST PLAN OVERVIEW</div>
-                    <textarea class="doc-textarea" id="d_overview" rows="4"></textarea>
-
-                    <!-- 2. Scope -->
-                    <div class="doc-heading">2. SCOPE OF PROJECT</div>
-                    <strong>a. In Scope</strong>
-                    <textarea class="doc-textarea" id="d_inscope" rows="4"></textarea>
-
-                    <div class="doc-heading">3. SCOPE OF TESTING</div>
-                    <strong>a. In Scope</strong>
-                    <textarea class="doc-textarea" id="d_test_inscope" rows="2"></textarea>
-                    <strong>b. Out of Scope</strong>
-                    <textarea class="doc-textarea" id="d_outscope" rows="2"></textarea>
-
-                    <div class="doc-heading">4. ASSUMPTIONS & DEPENDENCIES</div>
-                    <textarea class="doc-textarea" id="d_assumptions" rows="3"></textarea>
-
-                    <div class="doc-heading">5. TEST STRATEGY & METHODOLOGY</div>
-                    <textarea class="doc-textarea" id="d_strategy" rows="6"></textarea>
-
-                    <div class="doc-heading">6. AUTOMATION PLAN</div>
-                    <textarea class="doc-textarea" id="d_automation" rows="3"></textarea>
-
-                    <div class="doc-heading">7. TEST ENVIRONMENT & DATA</div>
-                    <textarea class="doc-textarea" id="d_env" rows="4"></textarea>
-
-                    <div class="doc-heading">8. TRACEABILITY (RTM)</div>
-                    <textarea class="doc-textarea" id="d_rtm" rows="2"></textarea>
-
-                    <div class="doc-heading">9. PROCESS (ENTRY/EXIT)</div>
-                    <textarea class="doc-textarea" id="d_process" rows="4"></textarea>
-
-                    <div class="doc-heading">10. DEFECT MANAGEMENT & REPORTING</div>
-                    <textarea class="doc-textarea" id="d_reporting" rows="4"></textarea>
-
-                    <div class="doc-heading">11. RISKS & MITIGATION</div>
-                    <textarea class="doc-textarea" id="d_risks" rows="3"></textarea>
-
-                    <div class="doc-heading">12. SCHEDULE & APPROVAL</div>
-                    <textarea class="doc-textarea" id="d_schedule" rows="5"></textarea>
-
+        <section id="previewSection" class="glass-card" style="display:none">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3>Document Preview</h3>
+                <div class="btn-group">
+                    <button class="btn btn-outline me-2" onclick="showForm()"><i class="fas fa-edit me-1"></i> Edit Form</button>
+                    <button class="btn btn-success text-white" onclick="downloadDocx()"><i class="fas fa-file-word me-1"></i> Download .DOCX</button>
                 </div>
             </div>
-        </div>
+            
+            <div id="previewContent" class="doc-preview-container">
+                <!-- Preview area injected by script.js -->
+            </div>
+        </section>
 
+        <footer class="text-center mt-5 mb-5 opacity-50">
+            <p>&copy; 2026 TestPlan.ai - Professional QA Tools</p>
+        </footer>
     </div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay">
-        <div class="spinner-grow text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
-        <h4 class="mt-3">Architecting your Plan...</h4>
-        <p class="text-muted">Analyzing inputs & formatting IEEE structure</p>
-    </div>
-
-    <script>
-        // ============================================================
-        // JIRA PANEL
-        // ============================================================
-        (function loadSavedCredentials() {
-            const saved = JSON.parse(localStorage.getItem('jira_creds') || '{}');
-            if (saved.url) document.getElementById('jiraUrl').value = saved.url;
-            if (saved.email) document.getElementById('jiraEmail').value = saved.email;
-            if (saved.token) document.getElementById('jiraToken').value = saved.token;
-        })();
-
-        function toggleJiraPanel() {
-            const body = document.getElementById('jiraPanelBody');
-            const chevron = document.getElementById('jiraChevron');
-            const isOpen = body.classList.contains('open');
-            body.classList.toggle('open', !isOpen);
-            chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-        }
-
-        async function fetchFromJira() {
-            const jiraUrl = document.getElementById('jiraUrl').value.trim();
-            const issueKey = document.getElementById('jiraIssueKey').value.trim().toUpperCase();
-            const email = document.getElementById('jiraEmail').value.trim();
-            const token = document.getElementById('jiraToken').value.trim();
-            const statusEl = document.getElementById('jiraStatusBar');
-            const btn = document.getElementById('btnFetchJira');
-
-            statusEl.innerHTML = '';
-            document.getElementById('jiraTicketCard').classList.remove('visible');
-
-            if (!jiraUrl || !issueKey || !email || !token) {
-                statusEl.innerHTML = `<div class="jira-error-bar"><i class="fas fa-exclamation-circle"></i> Please fill in all four JIRA fields.</div>`;
-                return;
-            }
-
-            // Save credentials (no token saved for security — optional)
-            localStorage.setItem('jira_creds', JSON.stringify({ url: jiraUrl, email }));
-
-            btn.disabled = true;
-            btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status"></span> Fetching...`;
-
-            try {
-                const response = await fetch('/fetch-jira', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        jira_url: jiraUrl,
-                        email,
-                        api_token: token,
-                        issue_key: issueKey
-                    })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || `Server error ${response.status}`);
-                }
-
-                // ---- Auto-fill Main Form ----
-                autoFillForm(data);
-
-                // ---- Show ticket preview card ----
-                showJiraCard(data, issueKey);
-
-                statusEl.innerHTML = `<div class="jira-success-bar"><i class="fas fa-check-circle"></i> Successfully imported! Form has been auto-filled. You can edit any field below.</div>`;
-
-            } catch (err) {
-                statusEl.innerHTML = `<div class="jira-error-bar"><i class="fas fa-times-circle"></i> ${err.message}</div>`;
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-cloud-download-alt"></i> Import`;
-            }
-        }
-
-        function autoFillForm(data) {
-            const f = document.forms['planForm'];
-
-            // Core fields
-            if (data.project_name) f.project_name.value = data.project_name;
-            if (data.meta && data.meta.summary) f.objective.value = data.meta.summary;
-
-            // Scope
-            if (data.inscope) f.in_scope.value = data.inscope;
-            if (data.outscope) f.out_scope.value = data.outscope;
-
-            // Assumptions
-            if (data.assumptions) f.assumptions.value = data.assumptions;
-
-            // Risks
-            if (data.risks) f.risks.value = data.risks;
-
-            // Dates
-            if (data.meta && data.meta.dueDate) {
-                // Set end date to due date if available
-                f.end_date.value = data.meta.dueDate;
-            }
-
-            // RTM
-            if (data.jira_issue_key && data.jira_base_url) {
-                f.rtm_ref.value = `${data.jira_base_url}/browse/${data.jira_issue_key}`;
-            }
-
-            // Scroll to form
-            document.getElementById('inputSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function showJiraCard(data, issueKey) {
-            const card = document.getElementById('jiraTicketCard');
-            document.getElementById('jiraCardKey').textContent = issueKey;
-            document.getElementById('jiraCardSummary').textContent = data.meta.summary || '';
-
-            const meta = data.meta;
-            const pills = [
-                { label: 'Type', value: meta.issueType },
-                { label: 'Status', value: meta.status },
-                { label: 'Priority', value: meta.priority },
-                { label: 'Assignee', value: meta.assignee },
-                { label: 'Fix Ver.', value: meta.fixVersions },
-                { label: 'Points', value: meta.storyPoints },
-                { label: 'Components', value: meta.components },
-            ].filter(p => p.value && p.value !== 'N/A');
-
-            document.getElementById('jiraCardMeta').innerHTML = pills
-                .map(p => `<div class="jira-meta-pill">${p.label}: <span>${p.value}</span></div>`)
-                .join('');
-
-            card.classList.add('visible');
-        }
-
-        function toggleAuto() {
-            const check = document.getElementById('cAuto');
-            document.getElementById('autoDetails').style.display = check.checked ? 'flex' : 'none';
-        }
-
-        function generatePreview() {
-            // Simply map form values to the document preview TEXTAREAS
-            // We do this client-side for instant feedback
-
-            document.getElementById('loadingOverlay').style.display = 'flex';
-            setTimeout(() => {
-                const f = document.forms['planForm'];
-
-                // 1. Overview
-                document.getElementById('d_overview').value =
-                    `Project: ${f.project_name.value}\nType: ${f.project_type.value}\n\nObjective:\n${f.objective.value || 'To ensure the quality and stability of the release.'}`;
-
-                // 2. Scope
-                document.getElementById('d_inscope').value = f.in_scope.value;
-                document.getElementById('d_test_inscope').value = "Verification of all features listed above.";
-                document.getElementById('d_outscope').value = f.out_scope.value || "N/A";
-
-                // 4. Assumptions
-                document.getElementById('d_assumptions').value = f.assumptions.value || "Standard QA assumptions apply.";
-
-                // 5. Strategy
-                let strat = "Testing Types:\n";
-                document.querySelectorAll('input[name="types"]:checked').forEach(c => strat += `- ${c.value}\n`);
-                strat += `\nDefect Tool: ${f.defect_tool.value}`;
-                document.getElementById('d_strategy').value = strat;
-
-                // 6. Automation
-                if (document.getElementById('cAuto').checked) {
-                    document.getElementById('d_automation').value =
-                        `Tool: ${f.auto_tool.value}\nFramework: ${f.auto_framework.value}\nStrategy: Automated regression suite execution.`;
-                } else {
-                    document.getElementById('d_automation').value = "Manual Testing only for this release.";
-                }
-
-                // 7. Env
-                document.getElementById('d_env').value = `Data Strategy: ${f.test_data.value}\nEnvironment: QA / Staging`;
-
-                // 8. RTM
-                document.getElementById('d_rtm').value = f.rtm_ref.value ? `Traceability linked to Project ID: ${f.rtm_ref.value}` : "N/A";
-
-                // 9. Process
-                document.getElementById('d_process').value =
-                    `Entry Criteria: ${f.entry_criteria.value}\nExit Criteria: ${f.exit_criteria.value}`;
-
-                // 10. Reporting
-                document.getElementById('d_reporting').value = f.metrics.value || "Daily Status Reports & Defect Metrics";
-
-                // 11. Risks
-                document.getElementById('d_risks').value = f.risks.value || "None identified.";
-
-                // 12. Schedule
-                document.getElementById('d_schedule').value =
-                    `Start: ${f.start_date.value}\nEnd: ${f.end_date.value}\n\nSign-off Authority: ${f.sign_off.value}`;
-
-                document.getElementById('loadingOverlay').style.display = 'none';
-                document.getElementById('inputSection').style.display = 'none';
-                document.getElementById('previewSection').style.display = 'block';
-                window.scrollTo(0, 0);
-
-            }, 800);
-        }
-
-        function showForm() {
-            document.getElementById('inputSection').style.display = 'block';
-            document.getElementById('previewSection').style.display = 'none';
-        }
-
-        async function downloadDocx() {
-            // Gather text from PREVIEW fields (user might have edited them)
-            const payload = {
-                project_name: document.forms['planForm'].project_name.value,
-                overview: document.getElementById('d_overview').value,
-                inscope: document.getElementById('d_inscope').value,
-                outscope: document.getElementById('d_outscope').value,
-                assumptions: document.getElementById('d_assumptions').value,
-                strategy: document.getElementById('d_strategy').value,
-                automation: document.getElementById('d_automation').value,
-                env: document.getElementById('d_env').value,
-                process: document.getElementById('d_process').value,
-                reporting: document.getElementById('d_reporting').value,
-                risks: document.getElementById('d_risks').value,
-                schedule: document.getElementById('d_schedule').value,
-                rtm: document.getElementById('d_rtm').value
-            };
-
-            const response = await fetch('/generate-final', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `TestPlan_${payload.project_name.replace(/\s+/g, '_')}.docx`;
-                document.body.appendChild(a); a.click(); a.remove();
-            }
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
-
 </html>

@@ -23,17 +23,34 @@
 ```json
 {
   "project_name": "string",
-  "project_type": "enum('Web Application', 'Mobile App', 'API', 'Desktop', 'SaaS')",
-  "project_nature": "enum('New Development', 'Enhancement', 'Maintenance', 'Migration')",
-  "scope_description": "string",
-  "testing_types": "array[enum('Functional', 'Regression', 'API', 'Performance', 'Security', 'Automation', 'UAT Support')]",
-  "methodology": "enum('Agile', 'Waterfall')",
+  "project_type": "enum('Web Application', 'Mobile App', 'API', 'Desktop', 'SaaS Platform')",
+  "objective": "string (detailed project goals)",
+  "scope": {
+    "in_scope": "string",
+    "out_scope": "string",
+    "assumptions": "string"
+  },
+  "strategy": {
+    "methodology": "string",
+    "test_levels": "array[enum('Unit', 'Integration', 'System', 'UAT')]",
+    "testing_types": "array[enum('Functional', 'Regression', 'API', 'Performance', 'Security', 'Automation')]",
+    "automation_approach": "string",
+    "defect_management": "string"
+  },
+  "environment": {
+    "test_env": "string",
+    "test_data_strategy": "string"
+  },
+  "governance": {
+    "roles_responsibilities": "string",
+    "suspension_resumption": "string",
+    "deliverables": "string"
+  },
   "timeline": {
     "start_date": "date-string",
     "end_date": "date-string"
   },
-  "qa_resources": "enum('1', '2-3', '3+')",
-  "uploaded_file_content": "string (optional, parsed text)"
+  "uploaded_files": "array[string] (merged context from multiple files)"
 }
 ```
 

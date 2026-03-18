@@ -40,49 +40,50 @@ app.get('/', (req, res) => {
 });
 
 // Step 1: Preview Endpoint
-app.post('/preview', upload.single('project_file'), async (req, res) => {
+app.post('/preview', upload.array('project_files'), async (req, res) => {
     try {
         const formData = req.body;
         let fileContent = "";
 
-        // Handle File Upload Parsing
-        if (req.file) {
-            console.log(`File uploaded: ${req.file.originalname} (${req.file.mimetype})`);
-            const filePath = req.file.path;
+        // Handle File Upload Parsing for Multiple Files
+        if (req.files && req.files.length > 0) {
+            console.log(`Processing ${req.files.length} uploaded files...`);
+            
+            for (const file of req.files) {
+                console.log(`Parsing: ${file.originalname} (${file.mimetype})`);
+                const filePath = file.path;
 
-            if (req.file.mimetype === 'application/pdf') {
-                const dataBuffer = fs.readFileSync(filePath);
+                if (file.mimetype === 'application/pdf') {
+                    const dataBuffer = fs.readFileSync(filePath);
+                    const loadingTask = pdfjsLib.getDocument({
+                        data: new Uint8Array(dataBuffer),
+                        disableFontFace: true,
+                    });
+                    const doc = await loadingTask.promise;
+                    let extractedText = `--- Context from PDF: ${file.originalname} ---\n`;
 
-                // Custom extraction using pdfjs-dist with canvas features disabled
-                const loadingTask = pdfjsLib.getDocument({
-                    data: new Uint8Array(dataBuffer),
-                    disableFontFace: true, // Key to avoiding canvas-related font rendering
-                });
-                const doc = await loadingTask.promise;
-                let extractedText = "";
+                    for (let i = 1; i <= doc.numPages; i++) {
+                        const page = await doc.getPage(i);
+                        const content = await page.getTextContent();
+                        const strings = content.items.map(item => item.str);
+                        extractedText += strings.join(" ") + "\n";
+                    }
+                    fileContent += extractedText + "\n\n";
 
-                for (let i = 1; i <= doc.numPages; i++) {
-                    const page = await doc.getPage(i);
-                    const content = await page.getTextContent();
-                    // Join items with space, but preserve structure roughly
-                    const strings = content.items.map(item => item.str);
-                    extractedText += strings.join(" ") + "\n";
+                } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                    const result = await mammoth.extractRawText({ path: filePath });
+                    fileContent += `--- Context from DOCX: ${file.originalname} ---\n${result.value}\n\n`;
+                } else {
+                    const text = fs.readFileSync(filePath, 'utf8');
+                    fileContent += `--- Context from File: ${file.originalname} ---\n${text}\n\n`;
                 }
-                fileContent = extractedText;
 
-            } else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-                const result = await mammoth.extractRawText({ path: filePath });
-                fileContent = result.value;
-            } else {
-                // Fallback for text files or similar
-                fileContent = fs.readFileSync(filePath, 'utf8');
+                // Clean up uploaded file
+                fs.unlinkSync(filePath);
             }
-
-            // Clean up uploaded file
-            fs.unlinkSync(filePath);
         }
 
-        // Return JSON for the frontend to render vertically
+        // Return JSON for the frontend to render
         res.json({
             ...formData,
             uploaded_file_content: fileContent
@@ -90,7 +91,7 @@ app.post('/preview', upload.single('project_file'), async (req, res) => {
 
     } catch (error) {
         console.error("Error generating preview:", error);
-        res.status(500).json({ error: "Error generating preview." });
+        res.status(500).json({ error: "Error during file processing." });
     }
 });
 

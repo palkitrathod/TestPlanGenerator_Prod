@@ -1,17 +1,16 @@
 const docx = require('docx');
-const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, BorderStyle } = docx;
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle } = docx;
 
-// Helper function for new lines
+// Helper function for body text with line breaks
 function createParagraph(text) {
     if (!text) return new Paragraph("");
-    // Split by newlines to handle textareas properly
     const lines = text.split('\n');
     const runs = [];
     lines.forEach((line, index) => {
         runs.push(new TextRun({
             text: line,
             font: "Calibri",
-            size: 24 // 12pt
+            size: 22 // 11pt
         }));
         if (index < lines.length - 1) {
             runs.push(new TextRun({ break: 1 }));
@@ -20,102 +19,117 @@ function createParagraph(text) {
 
     return new Paragraph({
         children: runs,
-        spacing: { after: 200 },
+        spacing: { after: 200, line: 276 }, // 1.15 line spacing
     });
 }
 
+// Helper for professional headings
 function createHeading(text, level) {
+    const isMain = level === HeadingLevel.HEADING_1;
     return new Paragraph({
         children: [
             new TextRun({
                 text: text,
                 font: "Calibri",
                 bold: true,
-                size: level === HeadingLevel.HEADING_1 ? 32 : 28, // 16pt or 14pt
-                color: "2E74B5" // Blue Accent
+                size: isMain ? 32 : 26, // 16pt or 13pt
+                color: isMain ? "1F4E78" : "2E74B5"
             })
         ],
         heading: level,
-        spacing: { before: 400, after: 200 },
-        border: level === HeadingLevel.HEADING_1 ? {
-            bottom: { color: "2E74B5", space: 1, value: "single", size: 6 }
+        spacing: { before: isMain ? 400 : 300, after: 150 },
+        border: isMain ? {
+            bottom: { color: "1F4E78", space: 1, value: "single", size: 6 }
         } : undefined
     });
 }
 
 async function generateTestPlan(data) {
-    console.log("Generating Professional Test Plan for:", data.project_name);
+    console.log("Generating Enhanced Test Plan for:", data.project_name);
 
-    // Document Sections
     const doc = new Document({
-        styles: {
-            default: {
-                heading1: {
-                    run: { font: "Calibri", size: 32, bold: true, color: "2E74B5" },
-                    paragraph: { spacing: { before: 240, after: 120 } }
-                }
-            }
-        },
+        title: "Test Plan - " + data.project_name,
         sections: [{
-            properties: {},
+            properties: {
+                page: {
+                    margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } // 1 inch margins
+                }
+            },
             children: [
-                // 1. Cover Page
+                // 1. COVER PAGE
                 new Paragraph({
-                    children: [new TextRun({ text: "TEST PLAN", font: "Calibri", size: 72, bold: true, color: "1F497D" })],
-                    alignment: "center",
-                    spacing: { before: 3000, after: 500 },
+                    children: [new TextRun({ text: "SOFTWARE TEST PLAN", font: "Calibri", size: 56, bold: true, color: "1F4E78" })],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 2400 },
                 }),
                 new Paragraph({
-                    children: [new TextRun({ text: `Project: ${data.project_name}`, font: "Calibri", size: 48, })],
-                    alignment: "center",
-                    spacing: { after: 5000 },
+                    children: [new TextRun({ text: data.project_name, font: "Calibri", size: 40, bold: true })],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 400, after: 4000 },
                 }),
                 new Paragraph({
-                    children: [new TextRun({ text: `Date: ${new Date().toLocaleDateString()}`, italics: true })],
-                    alignment: "center",
+                    children: [
+                        new TextRun({ text: `Version: 1.0`, font: "Calibri", size: 24 }),
+                        new TextRun({ text: "\n", break: 1 }),
+                        new TextRun({ text: `Date: ${new Date().toLocaleDateString()}`, font: "Calibri", size: 24 }),
+                        new TextRun({ text: "\n", break: 1 }),
+                        new TextRun({ text: `Status: Draft`, font: "Calibri", size: 24 })
+                    ],
+                    alignment: AlignmentType.CENTER,
                 }),
                 new Paragraph({ text: "", pageBreakBefore: true }),
 
-                // SECTIONS MAPPED FROM REFERENCE
-                createHeading("1. Test Plan Overview", HeadingLevel.HEADING_1),
-                createParagraph(data.overview),
+                // 2. INTRODUCTION
+                createHeading("1. Introduction", HeadingLevel.HEADING_1),
+                createHeading("1.1 Project Objective", HeadingLevel.HEADING_2),
+                createParagraph(data.overview || data.objective),
 
-                createHeading("2. Scope of Project", HeadingLevel.HEADING_1),
-                createHeading("a. In Scope", HeadingLevel.HEADING_3),
-                createParagraph(data.inscope),
-
-                createHeading("3. Scope of Testing", HeadingLevel.HEADING_1),
-                createHeading("a. Testing In Scope", HeadingLevel.HEADING_3),
-                createParagraph("Verify all features listed in project scope."),
-                createHeading("b. Out of Scope", HeadingLevel.HEADING_3),
-                createParagraph(data.outscope),
-
-                createHeading("4. Assumptions & Dependencies", HeadingLevel.HEADING_1),
+                // 3. SCOPE
+                createHeading("2. Scope of Work", HeadingLevel.HEADING_1),
+                createHeading("2.1 In-Scope Features", HeadingLevel.HEADING_2),
+                createParagraph(data.inscope || data.in_scope),
+                createHeading("2.2 Out-of-Scope (Exclusions)", HeadingLevel.HEADING_2),
+                createParagraph(data.outscope || data.out_scope),
+                createHeading("2.3 Assumptions & Dependencies", HeadingLevel.HEADING_2),
                 createParagraph(data.assumptions),
 
-                createHeading("5. Test Strategy & Methodology", HeadingLevel.HEADING_1),
-                createParagraph(data.strategy),
-
-                createHeading("6. Automation Plan", HeadingLevel.HEADING_1),
+                // 4. TEST STRATEGY
+                createHeading("3. Test Strategy", HeadingLevel.HEADING_1),
+                createHeading("3.1 Methodology", HeadingLevel.HEADING_2),
+                createParagraph(data.methodology || "Standard Agile Lifecycle"),
+                createHeading("3.2 Test Levels", HeadingLevel.HEADING_2),
+                createParagraph(data.levels || "Integration, System, UAT"),
+                createHeading("3.3 Automation Approach", HeadingLevel.HEADING_2),
                 createParagraph(data.automation),
+                createHeading("3.4 Defect Management", HeadingLevel.HEADING_2),
+                createParagraph(data.defect_mgmt),
 
-                createHeading("7. Test Environment & Data", HeadingLevel.HEADING_1),
-                createParagraph(data.env),
+                // 5. TEST ENVIRONMENT
+                createHeading("4. Test Environment & Data", HeadingLevel.HEADING_1),
+                createHeading("4.1 Infrastructure & Tools", HeadingLevel.HEADING_2),
+                createParagraph(data.env || data.test_env),
+                createHeading("4.2 Test Data Management", HeadingLevel.HEADING_2),
+                createParagraph(data.test_data),
 
-                createHeading("8. Requirement Traceability (RTM)", HeadingLevel.HEADING_1),
-                createParagraph(data.rtm),
+                // 6. GOVERNANCE
+                createHeading("5. Governance & Operations", HeadingLevel.HEADING_1),
+                createHeading("5.1 Roles & Responsibilities", HeadingLevel.HEADING_2),
+                createParagraph(data.roles),
+                createHeading("5.2 Suspension & Resumption Criteria", HeadingLevel.HEADING_2),
+                createParagraph(data.suspension),
+                createHeading("5.3 Entrance & Exit Criteria", HeadingLevel.HEADING_2),
+                createParagraph("Entrance: Smoke test passed, environment stable.\nExit: 100% test cases executed, 0 Critical bugs open."),
 
-                createHeading("9. Process (Entry & Exit Criteria)", HeadingLevel.HEADING_1),
-                createParagraph(data.process),
+                // 7. DELIVERABLES & SCHEDULE
+                createHeading("6. Deliverables & Schedule", HeadingLevel.HEADING_1),
+                createHeading("6.1 QA Deliverables", HeadingLevel.HEADING_2),
+                createParagraph(data.deliverables || "Test Plan, Test Cases, Execution Log, Defect Report."),
+                createHeading("6.2 Schedule", HeadingLevel.HEADING_2),
+                createParagraph(data.schedule || `Planned Start: ${data.start_date || 'TBD'}\nPlanned End: ${data.end_date || 'TBD'}`),
 
-                createHeading("10. Defect Management & Reporting", HeadingLevel.HEADING_1),
-                createParagraph(data.reporting),
-
-                createHeading("11. Risks & Mitigation", HeadingLevel.HEADING_1),
-                createParagraph(data.risks),
-
-                createHeading("12. Schedule & Sign-Off", HeadingLevel.HEADING_1),
-                createParagraph(data.schedule),
+                // 8. RISKS
+                createHeading("7. Risks & Mitigation", HeadingLevel.HEADING_1),
+                createParagraph(data.risks || "No significant risks identified at this stage."),
             ],
         }],
     });
