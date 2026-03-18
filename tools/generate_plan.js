@@ -47,12 +47,31 @@ function createHeading(text, level) {
 async function generateTestPlan(data) {
     console.log("Generating Enhanced Test Plan for:", data.project_name);
 
+    // Document Control Table
+    const controlTable = new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+            new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Reviewers", bold: true })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Approvers", bold: true })] })] }),
+                ],
+            }),
+            new TableRow({
+                children: [
+                    new TableCell({ children: [createParagraph(data.reviewers || "QA Manager, Project Manager")] }),
+                    new TableCell({ children: [createParagraph(data.approvers || "Stakeholders")] }),
+                ],
+            }),
+        ],
+    });
+
     const doc = new Document({
         title: "Test Plan - " + data.project_name,
         sections: [{
             properties: {
                 page: {
-                    margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } // 1 inch margins
+                    margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }
                 }
             },
             children: [
@@ -69,67 +88,59 @@ async function generateTestPlan(data) {
                 }),
                 new Paragraph({
                     children: [
-                        new TextRun({ text: `Version: 1.0`, font: "Calibri", size: 24 }),
+                        new TextRun({ text: `Version: ${data.version || '1.0.0'}`, font: "Calibri", size: 24 }),
                         new TextRun({ text: "\n", break: 1 }),
                         new TextRun({ text: `Date: ${new Date().toLocaleDateString()}`, font: "Calibri", size: 24 }),
                         new TextRun({ text: "\n", break: 1 }),
-                        new TextRun({ text: `Status: Draft`, font: "Calibri", size: 24 })
+                        new TextRun({ text: `Status: Final`, font: "Calibri", size: 24 })
                     ],
                     alignment: AlignmentType.CENTER,
                 }),
                 new Paragraph({ text: "", pageBreakBefore: true }),
 
-                // 2. INTRODUCTION
+                // 2. DOCUMENT CONTROL
+                createHeading("0. Document Control", HeadingLevel.HEADING_1),
+                controlTable,
+                new Paragraph({ text: "", spacing: { after: 400 } }),
+
+                // 3. INTRODUCTION
                 createHeading("1. Introduction", HeadingLevel.HEADING_1),
                 createHeading("1.1 Project Objective", HeadingLevel.HEADING_2),
                 createParagraph(data.overview || data.objective),
 
-                // 3. SCOPE
+                // 4. SCOPE
                 createHeading("2. Scope of Work", HeadingLevel.HEADING_1),
                 createHeading("2.1 In-Scope Features", HeadingLevel.HEADING_2),
                 createParagraph(data.inscope || data.in_scope),
                 createHeading("2.2 Out-of-Scope (Exclusions)", HeadingLevel.HEADING_2),
                 createParagraph(data.outscope || data.out_scope),
-                createHeading("2.3 Assumptions & Dependencies", HeadingLevel.HEADING_2),
-                createParagraph(data.assumptions),
 
-                // 4. TEST STRATEGY
-                createHeading("3. Test Strategy", HeadingLevel.HEADING_1),
+                // 5. TEST STRATEGY & METRICS
+                createHeading("3. Strategy & Scenarios", HeadingLevel.HEADING_1),
                 createHeading("3.1 Methodology", HeadingLevel.HEADING_2),
                 createParagraph(data.methodology || "Standard Agile Lifecycle"),
-                createHeading("3.2 Test Levels", HeadingLevel.HEADING_2),
-                createParagraph(data.levels || "Integration, System, UAT"),
-                createHeading("3.3 Automation Approach", HeadingLevel.HEADING_2),
-                createParagraph(data.automation),
-                createHeading("3.4 Defect Management", HeadingLevel.HEADING_2),
-                createParagraph(data.defect_mgmt),
+                createHeading("3.2 Metric Description", HeadingLevel.HEADING_2),
+                createParagraph(data.metrics || "Bug Rejection Ratio < 5%\nTest Coverage > 90%"),
+                createHeading("3.3 Test Scenarios", HeadingLevel.HEADING_2),
+                createParagraph(data.scenarios || "1. Functional Validation\n2. Regression Suite\n3. UAT"),
 
-                // 5. TEST ENVIRONMENT
-                createHeading("4. Test Environment & Data", HeadingLevel.HEADING_1),
-                createHeading("4.1 Infrastructure & Tools", HeadingLevel.HEADING_2),
-                createParagraph(data.env || data.test_env),
-                createHeading("4.2 Test Data Management", HeadingLevel.HEADING_2),
-                createParagraph(data.test_data),
-
-                // 6. GOVERNANCE
-                createHeading("5. Governance & Operations", HeadingLevel.HEADING_1),
-                createHeading("5.1 Roles & Responsibilities", HeadingLevel.HEADING_2),
-                createParagraph(data.roles),
-                createHeading("5.2 Suspension & Resumption Criteria", HeadingLevel.HEADING_2),
-                createParagraph(data.suspension),
-                createHeading("5.3 Entrance & Exit Criteria", HeadingLevel.HEADING_2),
-                createParagraph("Entrance: Smoke test passed, environment stable.\nExit: 100% test cases executed, 0 Critical bugs open."),
+                // 6. TEST ENVIRONMENT & GOVERNANCE
+                createHeading("4. Environment & Governance", HeadingLevel.HEADING_1),
+                createHeading("4.1 Test Environment", HeadingLevel.HEADING_2),
+                createParagraph(data.env || data.test_env || "QA Environment simulating production hardware."),
+                createHeading("4.2 Risks & Mitigation", HeadingLevel.HEADING_2),
+                createParagraph(data.risks || "No significant risks identified."),
+                createHeading("4.3 Entry & Exit Criteria", HeadingLevel.HEADING_2),
+                createParagraph(data.criteria || "Entry: Build Deployed. Exit: All TCs Passed."),
+                createHeading("4.4 Roles & Responsibilities", HeadingLevel.HEADING_2),
+                createParagraph(data.roles || "QA Lead: Planning\nTesters: Execution"),
 
                 // 7. DELIVERABLES & SCHEDULE
-                createHeading("6. Deliverables & Schedule", HeadingLevel.HEADING_1),
-                createHeading("6.1 QA Deliverables", HeadingLevel.HEADING_2),
-                createParagraph(data.deliverables || "Test Plan, Test Cases, Execution Log, Defect Report."),
-                createHeading("6.2 Schedule", HeadingLevel.HEADING_2),
-                createParagraph(data.schedule || `Planned Start: ${data.start_date || 'TBD'}\nPlanned End: ${data.end_date || 'TBD'}`),
-
-                // 8. RISKS
-                createHeading("7. Risks & Mitigation", HeadingLevel.HEADING_1),
-                createParagraph(data.risks || "No significant risks identified at this stage."),
+                createHeading("5. Deliverables & Schedule", HeadingLevel.HEADING_1),
+                createHeading("5.1 Deliverables", HeadingLevel.HEADING_2),
+                createParagraph(data.deliverables || "Test Plan, Bug Report"),
+                createHeading("5.2 Schedule", HeadingLevel.HEADING_2),
+                createParagraph(data.schedule || `Start Date: ${data.start_date || 'TBD'}\nEnd Date: ${data.end_date || 'TBD'}`),
             ],
         }],
     });

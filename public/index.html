@@ -1,243 +1,299 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TestPlan.ai | Premium Generator</title>
+    <title>TestPlan.ai | Enterprise QA Generator</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
     <div id="loadingOverlay">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-3">Generating your Test Plan...</p>
+        <div class="loader-glow"></div>
+        <p class="mt-4 fw-bold text-primary" id="loaderText">Generating professional test plan...</p>
     </div>
 
-    <div class="app-container">
-        <header class="app-header">
-            <h1><i class="fas fa-microchip"></i> TestPlan.ai</h1>
-            <p>Generate Professional-Grade Test Plans using BLAST protocol</p>
-        </header>
-
-        <!-- Jira Panel -->
-        <div class="jira-panel" id="jiraPanel">
-            <div class="d-flex justify-content-between align-items-center" onclick="toggleJiraPanel()" style="cursor:pointer">
-                <div>
-                    <span class="badge bg-primary me-2">JIRA</span>
-                    <strong>Import from Jira</strong>
-                    <small class="ms-2 opacity-75">Populate form from ticket</small>
-                </div>
-                <i class="fas fa-chevron-down" id="jiraChevron"></i>
-            </div>
-            <div id="jiraPanelBody" class="mt-3 collapse">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label text-white">Base URL</label>
-                        <input type="url" id="jiraUrl" class="form-control bg-dark text-white border-secondary" placeholder="https://org.atlassian.net">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label text-white">Issue Key</label>
-                        <input type="text" id="jiraIssueKey" class="form-control bg-dark text-white border-secondary" placeholder="PROJ-123">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label text-white">Email</label>
-                        <input type="email" id="jiraEmail" class="form-control bg-dark text-white border-secondary" placeholder="you@org.com">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label text-white">API Token</label>
-                        <input type="password" id="jiraToken" class="form-control bg-dark text-white border-secondary">
-                    </div>
-                </div>
-                <button class="btn btn-primary mt-3 w-100" onclick="fetchFromJira()">Fetch Data</button>
+    <!-- Intermediate Enhancement Prompt -->
+    <div id="enhancementPrompt" class="d-none">
+        <div class="glass-card p-5 text-center" style="max-width: 500px">
+            <i class="fas fa-check-circle text-success mb-4" style="font-size: 4rem"></i>
+            <h3 class="mb-3">Initial Draft Ready!</h3>
+            <p class="text-secondary mb-4">I've extracted the core details from <strong id="extractionSource" class="text-primary">your source</strong>. Would you like to refine the plan manually or finalize it now?</p>
+            <div class="d-flex flex-column gap-3">
+                <button class="btn btn-primary" onclick="startEnhancement()">Refine & Add Details <i class="fas fa-edit ms-2"></i></button>
+                <button class="btn btn-outline-light" onclick="finalizeFromAuto()">Finalize & Preview <i class="fas fa-file-alt ms-2"></i></button>
             </div>
         </div>
+    </div>
+
+    <div class="container py-5">
+        <header class="text-center mb-5">
+            <div class="logo-container">
+                <h1>Test Plan Generator</h1>
+                <p>Enterprise Grade • AI Powered • Professional QA</p>
+            </div>
+        </header>
 
         <main id="inputSection" class="glass-card">
+            <!-- Step Indicators -->
             <div class="wizard-steps">
-                <div class="step-indicator active" data-step="1">1 <span class="step-label">Project</span></div>
-                <div class="step-indicator" data-step="2">2 <span class="step-label">Scope</span></div>
-                <div class="step-indicator" data-step="3">3 <span class="step-label">Strategy</span></div>
-                <div class="step-indicator" data-step="4">4 <span class="step-label">Gov/Env</span></div>
-                <div class="step-indicator" data-step="5">5 <span class="step-label">Finish</span></div>
+                <div class="step-indicator active" data-step="0">
+                    <span class="step-number">0</span>
+                    <span class="step-label">Start</span>
+                </div>
+                <div class="step-indicator" data-step="1">
+                    <span class="step-number">1</span>
+                    <span class="step-label">Project</span>
+                </div>
+                <div class="step-indicator" data-step="2">
+                    <span class="step-number">2</span>
+                    <span class="step-label">Scope</span>
+                </div>
+                <div class="step-indicator" data-step="3">
+                    <span class="step-number">3</span>
+                    <span class="step-label">Strategy</span>
+                </div>
+                <div class="step-indicator" data-step="4">
+                    <span class="step-number">4</span>
+                    <span class="step-label">Environment</span>
+                </div>
+                <div class="step-indicator" data-step="5">
+                    <span class="step-number">5</span>
+                    <span class="step-label">Finalize</span>
+                </div>
             </div>
 
-            <form id="planForm">
-                <!-- STEP 1: Project Overview -->
-                <div class="step-content active" data-step="1">
-                    <h4 class="mb-4">1. Project Details</h4>
-                    <div class="row g-4">
+            <form id="planForm" novalidate>
+                <!-- STEP 0: Entry Mode -->
+                <div class="step-content active" data-step="0">
+                    <h3 class="text-center mb-5">Select Entry Method</h3>
+                    <div class="mode-cards">
+                        <div class="mode-card" onclick="setEntryMode('manual')">
+                            <i class="fas fa-keyboard"></i>
+                            <h4>Manual Entry</h4>
+                            <p>Fill all details manually</p>
+                        </div>
+                        <div class="mode-card" onclick="setEntryMode('upload')">
+                            <i class="fas fa-file-upload"></i>
+                            <h4>Upload Documents</h4>
+                            <p>Extract from PRD/BRD</p>
+                        </div>
+                        <div class="mode-card" onclick="setEntryMode('sync')">
+                            <i class="fas fa-sync"></i>
+                            <h4>Sync from Tool</h4>
+                            <p>Jira, ADO, Asana, Notion</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 1: Basis & Context -->
+                <div class="step-content" data-step="1">
+                    <div id="toolSyncSection" class="d-none">
+                        <div class="mb-4">
+                            <label class="form-label">Select Project Management Tool</label>
+                            <select class="form-select" name="selected_tool" id="selectedToolInput" onchange="selectTool(this.value)">
+                                <option value="" selected disabled>Choose a tool...</option>
+                                <option value="jira">Atlassian Jira</option>
+                                <option value="azure">Azure DevOps (ADO)</option>
+                                <option value="asana">Asana</option>
+                                <option value="notion">Notion</option>
+                            </select>
+                        </div>
+
+                        <div id="toolFields" class="d-none mt-4 p-3 glass-card rounded border border-secondary">
+                            <h6 class="mb-3 text-primary"><i class="fas fa-plug me-2"></i>Connection Settings</h6>
+                            <div class="mb-3">
+                                <label class="form-label" id="toolUrlLabel">URL / Workspace</label>
+                                <input type="text" class="form-control bg-dark text-white border-secondary" id="toolUrl" placeholder="https://your-org.atlassian.net">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" id="toolUserLabel">Username / Email</label>
+                                <input type="text" class="form-control bg-dark text-white border-secondary" id="toolUser" placeholder="user@example.com">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" id="toolKeyLabel">API Key / Token</label>
+                                <input type="password" class="form-control bg-dark text-white border-secondary" id="toolKey">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Issue / Ticket ID (Optional)</label>
+                                <input type="text" class="form-control bg-dark text-white border-secondary" id="issueId" placeholder="PROJ-123">
+                            </div>
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="testToolConnection()">
+                                <i class="fas fa-vial me-2"></i>Test Connection
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="uploadContextArea" class="mb-5 d-none">
+                        <h4 class="mb-4">Document Upload</h4>
+                        <div class="p-4 border border-dashed rounded text-center" style="border-style: dashed !important; border-color: var(--border-color) !important;">
+                            <input type="file" name="project_files" class="form-control d-none" id="fileInput" multiple>
+                            <label for="fileInput" class="btn btn-outline-light mb-0">
+                                <i class="fas fa-cloud-upload-alt me-2"></i> Choose PRD/BRD Files
+                            </label>
+                            <div id="fileList" class="mt-3 text-start small"></div>
+                            <p class="text-high-contrast mt-2 small">Supports PDF, DOCX, TXT</p>
+                        </div>
+                    </div>
+
+                    <h4 class="mb-4">Project Overview</h4>
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Project Name</label>
-                            <input type="text" name="project_name" class="form-control" placeholder="e.g. Phoenix E-commerce Platform" required>
+                            <label class="form-label">Project Name *</label>
+                            <input type="text" name="project_name" class="form-control" required placeholder="e.g. E-Commerce Platform">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Project Type</label>
-                            <select name="project_type" class="form-select">
-                                <option>Web Application</option>
-                                <option>Mobile App</option>
-                                <option>API / Microservices</option>
-                                <option>Desktop Application</option>
-                                <option>SaaS Implementation</option>
-                            </select>
+                            <label class="form-label">Document Version</label>
+                            <input type="text" name="version" class="form-control" value="1.0.0">
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Project Objective</label>
-                            <textarea name="objective" class="form-control" rows="3" placeholder="What are we trying to achieve with this release?"></textarea>
+                            <label class="form-label">Project Objective *</label>
+                            <textarea name="objective" class="form-control" rows="3" required placeholder="What are the goals of this project?"></textarea>
                         </div>
                     </div>
-                    <div class="mt-5 d-flex justify-content-end">
-                        <button type="button" class="btn btn-primary" data-next-step>Continue <i class="fas fa-arrow-right ms-2"></i></button>
+
+                    <div class="mt-5 d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline-light" onclick="resetToSelection()">Back to Selection</button>
+                        <button type="button" class="btn btn-primary" data-next-step>Continue</button>
                     </div>
                 </div>
 
-                <!-- STEP 2: Scope Definition -->
+                <!-- STEP 2: Scope -->
                 <div class="step-content" data-step="2">
-                    <h4 class="mb-4">2. Scope Definition</h4>
-                    <div class="row g-4">
-                        <div class="col-md-12">
-                            <label class="form-label">In-Scope Features</label>
-                            <textarea name="in_scope" class="form-control" rows="3" placeholder="Modules, features, or requirements to be tested..." required></textarea>
+                    <h4 class="mb-4">2. Scope & Control</h4>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">In Scope *</label>
+                            <textarea name="in_scope" class="form-control" rows="3" required placeholder="What features will be tested?"></textarea>
                         </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Out-of-Scope (Exclusions)</label>
-                            <textarea name="out_scope" class="form-control" rows="2" placeholder="What will NOT be tested in this cycle?"></textarea>
+                        <div class="col-12">
+                            <label class="form-label">Out of Scope</label>
+                            <textarea name="out_scope" class="form-control" rows="2" placeholder="What is excluded?"></textarea>
                         </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Assumptions & Dependencies</label>
-                            <textarea name="assumptions" class="form-control" rows="2" placeholder="e.g. Data migration complete by Dev team..."></textarea>
+                        <div class="col-md-6">
+                            <label class="form-label">Reviewers</label>
+                            <input type="text" name="reviewers" class="form-control" placeholder="QA Lead, Product Manager">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Approvers</label>
+                            <input type="text" name="approvers" class="form-control" placeholder="Stakeholders">
                         </div>
                     </div>
                     <div class="mt-5 d-flex justify-content-between">
-                        <button type="button" class="btn btn-outline" data-prev-step><i class="fas fa-arrow-left me-2"></i> Back</button>
-                        <button type="button" class="btn btn-primary" data-next-step>Continue <i class="fas fa-arrow-right ms-2"></i></button>
+                        <button type="button" class="btn btn-outline-light" data-prev-step>Back</button>
+                        <button type="button" class="btn btn-primary" data-next-step>Continue</button>
                     </div>
                 </div>
 
-                <!-- STEP 3: Test Strategy & Levels -->
+                <!-- STEP 3: Strategy -->
                 <div class="step-content" data-step="3">
-                    <h4 class="mb-4">3. Test Strategy & Levels</h4>
-                    <div class="row g-4">
+                    <h4 class="mb-4">3. Strategy & Metrics</h4>
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Methodology</label>
-                            <select name="methodology" class="form-select">
-                                <option>Agile (Scrum/Kanban)</option>
+                            <label class="form-label">Methodology *</label>
+                            <select name="methodology" class="form-select" required>
+                                <option value="">Select Methodology</option>
+                                <option>Agile (Scrum)</option>
                                 <option>Waterfall</option>
                                 <option>V-Model</option>
-                                <option>Hybrid</option>
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Test Levels</label>
-                            <div class="d-flex flex-wrap gap-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="levels" value="Unit" id="lvl1">
-                                    <label class="form-check-label" for="lvl1">Unit</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="levels" value="Integration" id="lvl2" checked>
-                                    <label class="form-check-label" for="lvl2">Integration</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="levels" value="System" id="lvl3" checked>
-                                    <label class="form-check-label" for="lvl3">System</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="levels" value="UAT" id="lvl4" checked>
-                                    <label class="form-check-label" for="lvl4">UAT</label>
-                                </div>
+                            <label class="form-label">Testing Types *</label>
+                            <div class="d-flex flex-wrap gap-3 mt-2">
+                                <label class="form-check-label"><input type="checkbox" name="testing_types" value="Functional" required> Functional</label>
+                                <label class="form-check-label"><input type="checkbox" name="testing_types" value="Regression"> Regression</label>
+                                <label class="form-check-label"><input type="checkbox" name="testing_types" value="API"> API</label>
+                                <label class="form-check-label"><input type="checkbox" name="testing_types" value="Performance"> Performance</label>
+                                <label class="form-check-label"><input type="checkbox" name="testing_types" value="Security"> Security</label>
                             </div>
                         </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Automation Approach</label>
-                            <textarea name="automation" class="form-control" rows="2" placeholder="Tooling, framework, and percentage of target automation..."></textarea>
+                        <div class="col-12">
+                            <label class="form-label">Metric Description (KPIs) *</label>
+                            <textarea name="metrics" class="form-control" rows="2" required placeholder="e.g. Bug Rejection Ratio < 5%, Test Coverage > 90%"></textarea>
                         </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Defect Management</label>
-                            <input type="text" name="defect_mgmt" class="form-control" value="Jira for bug tracking, Daily triage calls.">
+                        <div class="col-12">
+                            <label class="form-label">Test Scenarios *</label>
+                            <textarea name="scenarios" class="form-control" rows="4" required placeholder="1. Login Validation\n2. Purchase Flow\n3. API Rate Limiting..."></textarea>
                         </div>
                     </div>
                     <div class="mt-5 d-flex justify-content-between">
-                        <button type="button" class="btn btn-outline" data-prev-step><i class="fas fa-arrow-left me-2"></i> Back</button>
-                        <button type="button" class="btn btn-primary" data-next-step>Continue <i class="fas fa-arrow-right ms-2"></i></button>
+                        <button type="button" class="btn btn-outline-light" data-prev-step>Back</button>
+                        <button type="button" class="btn btn-primary" data-next-step>Continue</button>
                     </div>
                 </div>
 
-                <!-- STEP 4: Governance & Environment -->
+                <!-- STEP 4: Environment -->
                 <div class="step-content" data-step="4">
-                    <h4 class="mb-4">4. Governance & Environment</h4>
-                    <div class="row g-4">
+                    <h4 class="mb-4">4. Environment & Governance</h4>
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Test Environment</label>
-                            <textarea name="test_env" class="form-control" rows="2" placeholder="Hardware, OS, browsers, and mobile devices..."></textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Test Data Strategy</label>
-                            <textarea name="test_data" class="form-control" rows="2" placeholder="How will test data be managed?"></textarea>
+                            <label class="form-label">Test Environment *</label>
+                            <textarea name="test_env" class="form-control" rows="3" required placeholder="Hardware/Software requirements"></textarea>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Roles & Responsibilities</label>
-                            <textarea name="roles" class="form-control" rows="2" placeholder="QA Lead: Approval, Testers: Execution, Dev: Fixes..."></textarea>
+                            <textarea name="roles" class="form-control" rows="3" placeholder="QA Lead, Testers, Developers"></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Suspension & Resumption</label>
-                            <textarea name="suspension" class="form-control" rows="2" placeholder="Criteria to stop/restart testing (e.g. env down)"></textarea>
+                            <label class="form-label">Risks & Mitigation *</label>
+                            <textarea name="risks" class="form-control" rows="3" required placeholder="Risk: Limited Hardware. Mitigation: Use Simulation Tools."></textarea>
+                        </div>
+                        <div class="col-md-6 mt-3">
+                            <label class="form-label">Entry & Exit Criteria *</label>
+                            <textarea name="criteria" class="form-control" rows="3" required placeholder="Entry: Build Deployed. Exit: Zero P0/P1 Bugs."></textarea>
+                        </div>
+                        <div class="col-md-6 mt-3">
+                            <label class="form-label">Deliverables</label>
+                            <textarea name="deliverables" class="form-control" rows="3" placeholder="Test Plan, Bug Report, Execution Summary"></textarea>
                         </div>
                     </div>
                     <div class="mt-5 d-flex justify-content-between">
-                        <button type="button" class="btn btn-outline" data-prev-step><i class="fas fa-arrow-left me-2"></i> Back</button>
-                        <button type="button" class="btn btn-primary" data-next-step>Continue <i class="fas fa-arrow-right ms-2"></i></button>
+                        <button type="button" class="btn btn-outline-light" data-prev-step>Back</button>
+                        <button type="button" class="btn btn-primary" data-next-step>Continue</button>
                     </div>
                 </div>
 
-                <!-- STEP 5: Schedule & Upload -->
+                <!-- STEP 5: Finalize -->
                 <div class="step-content" data-step="5">
-                    <h4 class="mb-4">5. Delivery & Schedule</h4>
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <label class="form-label">Start Date</label>
-                            <input type="date" name="start_date" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">End Date</label>
-                            <input type="date" name="end_date" class="form-control" required>
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Test Deliverables</label>
-                            <textarea name="deliverables" class="form-control" rows="2">Test Plan, Test Cases, Execution Report, RTM, Sign-off Email.</textarea>
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Upload PRD/BRD Context (Multiple)</label>
-                            <input type="file" name="project_files" class="form-control" multiple accept=".pdf,.doc,.docx,.txt">
-                            <div class="form-text">Uploading documents helps AI extract context for your plan.</div>
+                    <h4 class="mb-4">5. Finalize</h4>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">Execution Timeline *</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-dark text-muted border-secondary">Start</span>
+                                <input type="date" name="start_date" class="form-control" required>
+                                <span class="input-group-text bg-dark text-muted border-secondary">End</span>
+                                <input type="date" name="end_date" class="form-control" required>
+                            </div>
                         </div>
                     </div>
                     <div class="mt-5 d-flex justify-content-between">
-                        <button type="button" class="btn btn-outline" data-prev-step><i class="fas fa-arrow-left me-2"></i> Back</button>
-                        <button type="button" onclick="generatePreview()" class="btn btn-primary px-5">Generate Plan <i class="fas fa-magic ms-2"></i></button>
+                        <button type="button" class="btn btn-outline-light" data-prev-step>Back</button>
+                        <button type="button" onclick="generatePreview()" class="btn btn-primary px-5">Generate Preview <i class="fas fa-magic ms-2"></i></button>
                     </div>
                 </div>
             </form>
         </main>
 
-        <section id="previewSection" class="glass-card" style="display:none">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3>Document Preview</h3>
-                <div class="btn-group">
-                    <button class="btn btn-outline me-2" onclick="showForm()"><i class="fas fa-edit me-1"></i> Edit Form</button>
-                    <button class="btn btn-success text-white" onclick="downloadDocx()"><i class="fas fa-file-word me-1"></i> Download .DOCX</button>
+        <section id="previewSection" class="d-none">
+            <div class="preview-actions d-flex justify-content-between align-items-center">
+                <h3 class="m-0"><i class="fas fa-file-alt me-2 text-primary"></i> Document Preview</h3>
+                <div>
+                    <button class="btn btn-outline-light me-2" onclick="showForm()"><i class="fas fa-edit me-1"></i> Edit</button>
+                    <button class="btn btn-primary" onclick="downloadDocx()"><i class="fas fa-download me-1"></i> Export To Word</button>
                 </div>
             </div>
-            
-            <div id="previewContent" class="doc-preview-container">
-                <!-- Preview area injected by script.js -->
-            </div>
+            <div id="previewContent" class="mt-4"></div>
         </section>
 
-        <footer class="text-center mt-5 mb-5 opacity-50">
-            <p>&copy; 2026 TestPlan.ai - Professional QA Tools</p>
+        <footer class="text-center py-5 opacity-25">
+            <p>&copy; 2026 TestPlan.ai • Enterprise Solutions</p>
         </footer>
     </div>
 

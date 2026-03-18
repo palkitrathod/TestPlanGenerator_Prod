@@ -26,15 +26,23 @@ const { fetchJiraTicket } = require('./tools/jira_reader');
 const app = express();
 const port = 3000;
 
-// Configure Multer for uploads (Use /tmp for Vercel/Serverless)
-const upload = multer({ dest: '/tmp/' });
+// Configure Multer for uploads (Use 'tmp/' for local/windows compatibility)
+const upload = multer({ dest: 'tmp/' });
 
 // Middleware
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+});
 app.use(express.static('public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // Allow JSON for the final generation step
 
 // Routes
+app.get('/ping', (req, res) => {
+    res.json({ message: 'pong', timestamp: new Date().toISOString() });
+});
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -83,35 +91,123 @@ app.post('/preview', upload.array('project_files'), async (req, res) => {
             }
         }
 
+        // Smart Extraction Logic for the Test Plan
+        const extractField = (patterns, fallback) => {
+            for (const regex of patterns) {
+                const match = fileContent.match(regex);
+                if (match && match[1]) return match[1].trim();
+            }
+            return fallback;
+        };
+
+        const projectName = extractField([
+            /Project:\s*(.*)/i, 
+            /Project Title:\s*(.*)/i, 
+            /Requirement Name:\s*(.*)/i,
+            /Document Name:\s*(.*)/i
+        ], formData.project_name || "Enterprise Project");
+
+        const objective = extractField([
+            /Objective:\s*(.*)/i, 
+            /Goals:\s*(.*)/i, 
+            /Purpose:\s*(.*)/i,
+            /Introduction:\s*(.*)/i
+        ], "The goal is to verify systemic logic and ensure user requirements are met.");
+
+        const scenarios = extractField([
+            /Scenario:\s*(.*)/ig, 
+            /Steps:\s*(.*)/ig, 
+            /Use Cases:\s*(.*)/ig
+        ], "1. Success Flow\n2. Validation Checks\n3. Negative Input Handling\n4. Performance Check");
+
+        const risks = extractField([
+            /Risk:\s*(.*)/i, 
+            /Mitigation:\s*(.*)/i, 
+            /Assumptions:\s*(.*)/i
+        ], "Potential delays in API integration, Hardware environment availability.");
+
+        const inScope = extractField([
+            /In Scope:\s*(.*)/i, 
+            /Scope Description:\s*(.*)/i, 
+            /Features:\s*(.*)/i
+        ], "All core functional modules mentioned in the BRD context.");
+
         // Return JSON for the frontend to render
         res.json({
             ...formData,
+            project_name: projectName,
+            objective: objective,
+            in_scope: inScope,
+            scenarios: scenarios,
+            risks: risks,
+            criteria: "Entry: Environment Ready & Approved build. Exit: All TCs executed & Defects closed.",
             uploaded_file_content: fileContent
         });
 
     } catch (error) {
         console.error("Error generating preview:", error);
-        res.status(500).json({ error: "Error during file processing." });
+        return res.status(500).json({ 
+            success: false, 
+            error: "Error during file processing: " + error.message 
+        });
+    }
+});
+
+// New Connection Validation Endpoint
+app.post('/validate-connection', async (req, res) => {
+    const { tool, url, user, token } = req.body;
+    try {
+        if (tool === 'jira') {
+            const testUrl = `${url.replace(/\/$/, '')}/rest/api/2/myself`;
+            const response = await fetch(testUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Basic ${Buffer.from(`${user}:${token}`).toString('base64')}`,
+                    'Accept': 'application/json'
+                }
+            });
+            if (response.ok) {
+                return res.json({ success: true });
+            } else {
+                return res.json({ success: false, error: `Auth failed (${response.status}). Check email/token.` });
+            }
+        }
+        // Mock success for other tools for now
+        res.json({ success: true });
+    } catch (error) {
+        res.json({ success: false, error: error.message });
     }
 });
 
 
-// Step 1b: Fetch JIRA Ticket & Map to Test Plan
-app.post('/fetch-jira', async (req, res) => {
+// Step 1b: Sync Tool Data (Jira, ADO, etc.) & Map to Test Plan
+app.post('/sync-tool-data', upload.none(), async (req, res) => {
     try {
-        const { jira_url, email, api_token, issue_key } = req.body;
+        const { tool, url, user, token, id } = req.body;
 
-        if (!jira_url || !email || !api_token || !issue_key) {
-            return res.status(400).json({ error: 'Missing required fields: jira_url, email, api_token, issue_key' });
+        let planData = {
+            project_name: "External Sync Project",
+            objective: "Requirements fetched from external tool.",
+            in_scope: "Core features defined in ticket/task.",
+            scenarios: "1. Main Success Path\n2. Exception Handling",
+            risks: "Dependency on third-party service availability."
+        };
+
+        if (tool === 'jira' && id) {
+            const jiraData = await fetchJiraTicket(url, user, token, id);
+            planData = {
+                project_name: jiraData.fields.project.name + " - " + jiraData.key,
+                objective: jiraData.fields.summary + "\n\n" + (jiraData.fields.description || ""),
+                in_scope: "Testing requirements for " + jiraData.key,
+                scenarios: "Verify: " + jiraData.fields.summary,
+                risks: "Extracted from Jira priority: " + (jiraData.fields.priority?.name || 'Medium')
+            };
         }
 
-        console.log(`Fetching JIRA ticket: ${issue_key} from ${jira_url}`);
-        const planData = await fetchJiraTicket(jira_url, email, api_token, issue_key);
-
-        res.json(planData);
+        res.json({ success: true, data: planData });
     } catch (error) {
-        console.error('Error fetching JIRA ticket:', error.message);
-        res.status(500).json({ error: error.message || 'Failed to fetch JIRA ticket.' });
+        console.error(`Error fetching ${req.body.tool} data:`, error.message);
+        res.status(500).json({ error: error.message || `Failed to fetch ${req.body.tool} data.` });
     }
 });
 
