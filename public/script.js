@@ -188,6 +188,48 @@ function initWizard() {
     document.querySelectorAll('[data-prev-step]').forEach(btn => {
         btn.addEventListener('click', () => prevStep());
     });
+    initValidationCleanup();
+}
+
+function clearFieldValidation(input) {
+    input.classList.remove('is-invalid');
+
+    if (input.type === 'checkbox') {
+        const group = document.querySelectorAll(`[name="${input.name}"]`);
+        const isGroupValid = Array.from(group).some(checkbox => checkbox.checked);
+
+        if (isGroupValid) {
+            group.forEach(checkbox => checkbox.classList.remove('is-invalid'));
+            group.forEach(checkbox => {
+                const feedback = checkbox.parentNode.querySelector('.invalid-feedback');
+                if (feedback) feedback.remove();
+            });
+        }
+        return;
+    }
+
+    const feedback = input.parentNode.querySelector('.invalid-feedback');
+    if (feedback) feedback.remove();
+}
+
+function isFieldValid(input) {
+    if (input.type === 'checkbox') {
+        const group = document.querySelectorAll(`[name="${input.name}"]`);
+        return Array.from(group).some(checkbox => checkbox.checked);
+    }
+
+    return Boolean(input.value && input.value.trim());
+}
+
+function initValidationCleanup() {
+    document.querySelectorAll('#planForm input, #planForm textarea, #planForm select').forEach(input => {
+        const eventName = input.tagName === 'SELECT' || input.type === 'checkbox' || input.type === 'date' ? 'change' : 'input';
+        input.addEventListener(eventName, () => {
+            if (isFieldValid(input)) {
+                clearFieldValidation(input);
+            }
+        });
+    });
 }
 
 function setEntryMode(mode) {
