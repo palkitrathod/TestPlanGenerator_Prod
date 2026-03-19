@@ -35,4 +35,3 @@ A professional, AI-powered system designed to generate standardized, enterprise-
 5.  **AI Field Rewriter**: Added a "Rewrite with AI" button on every input field to polish and professionalize user-provided or extracted text.
 
 ---
-*Created by Antigravity AI Assistant*
