@@ -61,6 +61,17 @@ const upload = multer({
     }
 });
 
+function runUpload(req, res, middleware) {
+    return new Promise((resolve, reject) => {
+        middleware(req, res, (error) => {
+            if (error) {
+                return reject(error);
+            }
+            resolve();
+        });
+    });
+}
+
 async function extractTextFromUpload(file) {
     const fileName = file.originalname || 'uploaded-file';
     const mimeType = file.mimetype || 'application/octet-stream';
@@ -115,8 +126,10 @@ app.get('/', (req, res) => {
 });
 
 // Step 1: Preview Endpoint
-app.post('/preview', upload.array('project_files'), async (req, res) => {
+app.post('/preview', async (req, res) => {
     try {
+        await runUpload(req, res, upload.array('project_files'));
+
         const formData = req.body;
         let fileContent = "";
 
@@ -186,6 +199,17 @@ app.post('/preview', upload.array('project_files'), async (req, res) => {
 
     } catch (error) {
         console.error("Error generating preview:", error);
+        if (error instanceof multer.MulterError) {
+            const message = error.code === 'LIMIT_FILE_SIZE'
+                ? 'Each uploaded file must be 10 MB or smaller.'
+                : error.code === 'LIMIT_FILE_COUNT'
+                    ? 'You can upload up to 5 files at a time.'
+                    : `Upload failed: ${error.message}`;
+            return res.status(400).json({
+                success: false,
+                error: message
+            });
+        }
         return res.status(500).json({ 
             success: false, 
             error: "Error during file processing: " + error.message 
