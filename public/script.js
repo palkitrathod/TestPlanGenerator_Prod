@@ -2,9 +2,19 @@ let currentStep = 0;
 const totalSteps = 5;
 let selectedEntryMode = 'manual';
 let extractedData = null;
+let latestPreviewData = null;
+
+function normalizeToArray(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string' && value.trim()) {
+        return value.split(',').map(item => item.trim()).filter(Boolean);
+    }
+    return [];
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     initWizard();
+    initializeRewriteActions();
     updateStepUI();
 
     // File list display logic
@@ -22,6 +32,154 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function formatMultilineText(value) {
+    const safeText = escapeHtml(value);
+    if (!safeText.trim()) {
+        return '<p class="preview-empty">Not provided</p>';
+    }
+
+    const lines = safeText.split('\n').map(line => line.trim()).filter(Boolean);
+    const isList = lines.every(line => /^(\d+\.|[-*])\s/.test(line));
+
+    if (isList) {
+        const items = lines.map(line => line.replace(/^(\d+\.|[-*])\s*/, '').trim());
+        return `<ol class="preview-list">${items.map(item => `<li>${item}</li>`).join('')}</ol>`;
+    }
+
+    return lines.map(line => `<p>${line}</p>`).join('');
+}
+
+function getFieldLabel(field) {
+    const labels = {
+        project_name: 'Project Name',
+        version: 'Document Version',
+        objective: 'Project Objective',
+        in_scope: 'In Scope',
+        out_scope: 'Out of Scope',
+        reviewers: 'Reviewers',
+        approvers: 'Approvers',
+        methodology: 'Methodology',
+        metrics: 'Metric Description',
+        scenarios: 'Test Scenarios',
+        test_env: 'Test Environment',
+        roles: 'Roles & Responsibilities',
+        risks: 'Risks & Mitigation',
+        criteria: 'Entry & Exit Criteria',
+        deliverables: 'Deliverables'
+    };
+    return labels[field] || field;
+}
+
+function rewriteTextLocally(text, fieldName = '') {
+    const cleanText = String(text || '').trim();
+    if (!cleanText) return '';
+
+    const lines = cleanText
+        .replace(/\r/g, '')
+        .split(/\n+/)
+        .map(line => line.trim())
+        .filter(Boolean);
+
+    const leadMap = {
+        objective: 'The objective of this test plan is to',
+        in_scope: 'This test plan covers',
+        out_scope: 'This test plan excludes',
+        metrics: 'Success metrics include',
+        scenarios: 'Key validation scenarios include',
+        test_env: 'Testing will be executed in',
+        risks: 'Primary risks and mitigations include',
+        criteria: 'Entry and exit criteria are defined as',
+        deliverables: 'Planned deliverables include'
+    };
+
+    if (lines.length === 1 && leadMap[fieldName] && !/[.!?]$/.test(cleanText)) {
+        return `${leadMap[fieldName]} ${cleanText.charAt(0).toLowerCase()}${cleanText.slice(1)}.`;
+    }
+
+    return lines.map(line => {
+        if (/^(\d+\.|[-*])\s/.test(line)) return line;
+        const normalized = line.charAt(0).toUpperCase() + line.slice(1);
+        return /[.!?]$/.test(normalized) ? normalized : `${normalized}.`;
+    }).join('\n');
+}
+
+function initializeRewriteActions() {
+    const fields = document.querySelectorAll('#planForm input[type="text"], #planForm textarea');
+    fields.forEach(field => {
+        if (field.dataset.rewriteReady === 'true') return;
+        if (!field.name) return;
+
+        const group = field.closest('.col-12, .col-md-6, .col-md-8, .mb-3, .mb-4') || field.parentElement;
+        if (!group) return;
+
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.className = 'rewrite-btn';
+        action.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Rewrite with AI';
+        action.addEventListener('click', () => rewriteField(field, action));
+
+        group.classList.add('field-with-ai');
+        group.appendChild(action);
+        field.dataset.rewriteReady = 'true';
+    });
+}
+
+async function rewriteField(field, button) {
+    const text = field.value.trim();
+    if (!text) {
+        alert('Enter some text first so it can be rewritten.');
+        return;
+    }
+
+    const originalLabel = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rewriting...';
+
+    try {
+        const payload = JSON.stringify({
+            text,
+            fieldName: field.name
+        });
+
+        let response = await fetch('/api/rewrite-field', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload
+        });
+
+        if (response.status === 404) {
+            response = await fetch('/rewrite-field', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payload
+            });
+        }
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.success === false) {
+            throw new Error(data.error || `Failed to rewrite content (${response.status}).`);
+        }
+
+        field.value = data.rewritten;
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch (error) {
+        field.value = rewriteTextLocally(text, field.name);
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalLabel;
+    }
+}
 
 function initWizard() {
     document.querySelectorAll('[data-next-step]').forEach(btn => {
@@ -59,6 +217,7 @@ function resetToSelection() {
     currentStep = 0;
     selectedEntryMode = 'manual';
     extractedData = null;
+    latestPreviewData = null;
 
     // Hide all conditional sections
     document.getElementById('toolSyncSection').classList.add('d-none');
@@ -135,14 +294,13 @@ async function handleAutoProcessing(type) {
     let sourceName = "your source";
 
     if (type === 'upload') {
+        const formEl = document.getElementById('planForm');
+        formData = new FormData(formEl);
         const files = document.getElementById('fileInput').files;
         if (files.length === 0) {
             hideLoader();
             alert('Please select at least one file');
             return;
-        }
-        for (let file of files) {
-            formData.append('project_files', file); 
         }
         sourceName = files.length === 1 ? files[0].name : `${files.length} documents`;
     } else {
@@ -184,9 +342,22 @@ function startEnhancement() {
     if (extractedData) {
         const form = document.getElementById('planForm');
         Object.keys(extractedData).forEach(key => {
-            const input = form.querySelector(`[name="${key}"]`);
+            const inputs = form.querySelectorAll(`[name="${key}"]`);
+            if (!inputs.length) return;
+
+            const value = extractedData[key];
+
+            if (inputs[0].type === 'checkbox') {
+                const selectedValues = normalizeToArray(value);
+                inputs.forEach(input => {
+                    input.checked = selectedValues.includes(input.value);
+                });
+                return;
+            }
+
+            const input = inputs[0];
             if (input && (!input.value || input.value === '')) {
-                input.value = extractedData[key];
+                input.value = Array.isArray(value) ? value.join(', ') : value;
             }
         });
         
@@ -212,12 +383,14 @@ function finalizeFromAuto() {
 function nextStep() {
     if (currentStep === 1 && (selectedEntryMode === 'upload' || selectedEntryMode === 'sync')) {
         // Special case: if we are in auto mode and have files/tool info, process it
-        const hasContent = selectedEntryMode === 'upload' ? 
-            document.querySelector('[name="project_files"]').files.length > 0 :
-            document.querySelector('[name="tool_url"]').value;
+        const hasContent = selectedEntryMode === 'upload'
+            ? document.querySelector('[name="project_files"]').files.length > 0
+            : (document.getElementById('selectedToolInput').value &&
+               document.getElementById('toolUrl').value &&
+               document.getElementById('toolKey').value);
             
         if (hasContent && !extractedData) {
-            handleAutoProcessing();
+            handleAutoProcessing(selectedEntryMode);
             return;
         }
     }
@@ -306,59 +479,161 @@ async function generatePreview() {
 }
 
 function renderPreview(data) {
-    document.getElementById('previewContent').innerHTML = `
-        <div class="doc-paper glass-card">
-            <div class="mb-5 text-end opacity-50">
-                <p>Version: ${data.version || '1.0.0'} | Confidential</p>
-                <p>Date: ${new Date().toLocaleDateString()}</p>
-            </div>
-            <h1 class="text-center mb-5">${data.project_name}</h1>
-            
-            <section class="mb-4">
-                <h2 class="h5 border-bottom pb-2">0. Document Control</h2>
-                <div class="table-responsive">
-                    <table class="table table-bordered border-secondary text-white small">
-                        <thead><tr><th>Reviewers</th><th>Approvers</th></tr></thead>
-                        <tbody><tr>
-                            <td><textarea class="doc-textarea" name="reviewers">${data.reviewers || ''}</textarea></td>
-                            <td><textarea class="doc-textarea" name="approvers">${data.approvers || ''}</textarea></td>
-                        </tr></tbody>
-                    </table>
-                </div>
-            </section>
+    latestPreviewData = {
+        ...data,
+        overview: data.overview || data.objective,
+        inscope: data.inscope || data.in_scope,
+        outscope: data.outscope || data.out_scope,
+        env: data.env || data.test_env
+    };
 
-            <section class="mb-4">
-                <h2 class="h5 border-bottom pb-2">1. Introduction</h2>
-                <textarea class="doc-textarea" name="overview">${data.objective || ''}</textarea>
-            </section>
-            
-            <section class="mb-4">
-                <h2 class="h5 border-bottom pb-2">2. Scope</h2>
-                <h6 class="mt-3">2.1 In Scope</h6>
-                <textarea class="doc-textarea" name="inscope">${data.in_scope || ''}</textarea>
-                <h6 class="mt-3">2.2 Out of Scope</h6>
-                <textarea class="doc-textarea" name="outscope">${data.out_scope || ''}</textarea>
-            </section>
-            
-            <section class="mb-4">
-                <h2 class="h5 border-bottom pb-2">3. Strategy & Scenarios</h2>
-                <h6 class="mt-3">3.1 Methodology</h6>
-                <textarea class="doc-textarea" name="methodology">${data.methodology || ''}</textarea>
-                <h6 class="mt-3">3.2 Metrics (KPIs)</h6>
-                <textarea class="doc-textarea" name="metrics">${data.metrics || ''}</textarea>
-                <h6 class="mt-3">3.3 Test Scenarios</h6>
-                <textarea class="doc-textarea" name="scenarios" rows="6">${data.scenarios || ''}</textarea>
-            </section>
-            
-            <section class="mb-4">
-                <h2 class="h5 border-bottom pb-2">4. Governance & Environment</h2>
-                <h6 class="mt-3">4.1 Test Environment</h6>
-                <textarea class="doc-textarea" name="env">${data.test_env || ''}</textarea>
-                <h6 class="mt-3">4.2 Risks & Mitigation</h6>
-                <textarea class="doc-textarea" name="risks">${data.risks || ''}</textarea>
-                <h6 class="mt-3">4.3 Entry & Exit Criteria</h6>
-                <textarea class="doc-textarea" name="criteria">${data.criteria || ''}</textarea>
-            </section>
+    const testingTypes = normalizeToArray(latestPreviewData.testing_types);
+    const schedule = latestPreviewData.schedule || `Start Date: ${latestPreviewData.start_date || 'TBD'}\nEnd Date: ${latestPreviewData.end_date || 'TBD'}`;
+
+    document.getElementById('previewContent').innerHTML = `
+        <div class="preview-shell">
+            <aside class="preview-sidebar glass-card">
+                <p class="preview-eyebrow">Preview Mode</p>
+                <h3>${escapeHtml(latestPreviewData.project_name || 'Untitled Project')}</h3>
+                <div class="preview-meta-stack">
+                    <div>
+                        <span>Version</span>
+                        <strong>${escapeHtml(latestPreviewData.version || '1.0.0')}</strong>
+                    </div>
+                    <div>
+                        <span>Date</span>
+                        <strong>${new Date().toLocaleDateString()}</strong>
+                    </div>
+                    <div>
+                        <span>Methodology</span>
+                        <strong>${escapeHtml(latestPreviewData.methodology || 'Not provided')}</strong>
+                    </div>
+                </div>
+                <div class="preview-chip-group">
+                    ${testingTypes.map(type => `<span class="preview-chip">${escapeHtml(type)}</span>`).join('') || '<span class="preview-chip muted">Testing types pending</span>'}
+                </div>
+            </aside>
+
+            <div class="doc-paper preview-document">
+                <div class="document-hero">
+                    <div>
+                        <p class="document-kicker">Software Test Plan</p>
+                        <h1>${escapeHtml(latestPreviewData.project_name || 'Untitled Project')}</h1>
+                    </div>
+                    <div class="document-badge">
+                        <span>Confidential</span>
+                        <strong>Version ${escapeHtml(latestPreviewData.version || '1.0.0')}</strong>
+                    </div>
+                </div>
+
+                <section class="preview-section">
+                    <div class="section-heading">
+                        <span>0</span>
+                        <h2>Document Control</h2>
+                    </div>
+                    <div class="preview-grid two-up">
+                        <article class="preview-card">
+                            <h3>Reviewers</h3>
+                            ${formatMultilineText(latestPreviewData.reviewers)}
+                        </article>
+                        <article class="preview-card">
+                            <h3>Approvers</h3>
+                            ${formatMultilineText(latestPreviewData.approvers)}
+                        </article>
+                    </div>
+                </section>
+
+                <section class="preview-section">
+                    <div class="section-heading">
+                        <span>1</span>
+                        <h2>Introduction</h2>
+                    </div>
+                    <article class="preview-card">
+                        <h3>Project Objective</h3>
+                        ${formatMultilineText(latestPreviewData.overview)}
+                    </article>
+                </section>
+
+                <section class="preview-section">
+                    <div class="section-heading">
+                        <span>2</span>
+                        <h2>Scope</h2>
+                    </div>
+                    <div class="preview-grid two-up">
+                        <article class="preview-card">
+                            <h3>In Scope</h3>
+                            ${formatMultilineText(latestPreviewData.inscope)}
+                        </article>
+                        <article class="preview-card">
+                            <h3>Out of Scope</h3>
+                            ${formatMultilineText(latestPreviewData.outscope)}
+                        </article>
+                    </div>
+                </section>
+
+                <section class="preview-section">
+                    <div class="section-heading">
+                        <span>3</span>
+                        <h2>Strategy & Scenarios</h2>
+                    </div>
+                    <div class="preview-grid">
+                        <article class="preview-card">
+                            <h3>Methodology</h3>
+                            ${formatMultilineText(latestPreviewData.methodology)}
+                        </article>
+                        <article class="preview-card">
+                            <h3>Metrics</h3>
+                            ${formatMultilineText(latestPreviewData.metrics)}
+                        </article>
+                        <article class="preview-card full-width">
+                            <h3>Test Scenarios</h3>
+                            ${formatMultilineText(latestPreviewData.scenarios)}
+                        </article>
+                    </div>
+                </section>
+
+                <section class="preview-section">
+                    <div class="section-heading">
+                        <span>4</span>
+                        <h2>Environment & Governance</h2>
+                    </div>
+                    <div class="preview-grid">
+                        <article class="preview-card">
+                            <h3>Test Environment</h3>
+                            ${formatMultilineText(latestPreviewData.env)}
+                        </article>
+                        <article class="preview-card">
+                            <h3>Roles & Responsibilities</h3>
+                            ${formatMultilineText(latestPreviewData.roles)}
+                        </article>
+                        <article class="preview-card">
+                            <h3>Risks & Mitigation</h3>
+                            ${formatMultilineText(latestPreviewData.risks)}
+                        </article>
+                        <article class="preview-card">
+                            <h3>Entry & Exit Criteria</h3>
+                            ${formatMultilineText(latestPreviewData.criteria)}
+                        </article>
+                    </div>
+                </section>
+
+                <section class="preview-section">
+                    <div class="section-heading">
+                        <span>5</span>
+                        <h2>Deliverables & Schedule</h2>
+                    </div>
+                    <div class="preview-grid two-up">
+                        <article class="preview-card">
+                            <h3>Deliverables</h3>
+                            ${formatMultilineText(latestPreviewData.deliverables)}
+                        </article>
+                        <article class="preview-card">
+                            <h3>Schedule</h3>
+                            ${formatMultilineText(schedule)}
+                        </article>
+                    </div>
+                </section>
+            </div>
         </div>
     `;
 }
@@ -378,8 +653,19 @@ function hideLoader() {
 }
 
 async function downloadDocx() {
-    const previewData = { project_name: document.querySelector('[name="project_name"]').value, version: document.querySelector('[name="version"]').value };
-    document.querySelectorAll('.doc-textarea').forEach(ta => previewData[ta.name] = ta.value);
+    const previewData = latestPreviewData || {
+        project_name: document.querySelector('[name="project_name"]').value,
+        version: document.querySelector('[name="version"]').value,
+        objective: document.querySelector('[name="objective"]')?.value || '',
+        in_scope: document.querySelector('[name="in_scope"]')?.value || '',
+        out_scope: document.querySelector('[name="out_scope"]')?.value || '',
+        methodology: document.querySelector('[name="methodology"]')?.value || '',
+        metrics: document.querySelector('[name="metrics"]')?.value || '',
+        scenarios: document.querySelector('[name="scenarios"]')?.value || '',
+        test_env: document.querySelector('[name="test_env"]')?.value || '',
+        risks: document.querySelector('[name="risks"]')?.value || '',
+        criteria: document.querySelector('[name="criteria"]')?.value || ''
+    };
     
     const response = await fetch('/generate-final', {
         method: 'POST',

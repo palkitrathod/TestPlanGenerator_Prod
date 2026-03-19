@@ -1,105 +1,38 @@
-# 🚀 Test Plan Generator (Prod)
- 
-A professional, automated tool designed to generate IEEE 829-compliant Test Plan documents. This application streamlines the QA planning process by converting structured inputs and uploaded requirements files into a polished `.docx` test plan.
+# Test Plan Generator (Enterprise Edition)
 
-🔴 **Live Demo:** [https://test-plan-generator-app.vercel.app](https://test-plan-generator-app.vercel.app)
+A professional, AI-powered system designed to generate standardized, enterprise-grade Test Plan documents (DOCX) based on structured user inputs, document analysis (PDF/DOCX), and tool integrations (Jira).
 
----
+## 🚀 Key Features
 
-## 🎯 Purpose & Motivation
+- **Multi-Mode Entry**:
+  - **Manual Entry**: Guided 5-step wizard for detailed project control.
+  - **Document Upload**: Automatically analyze and extract test plan context from PRDs, BRDs, or functional specs (PDF/DOCX/TXT).
+  - **Tool Sync**: Connect directly to **Jira** to fetch ticket data and transform it into a structured test strategy.
+  
+- **Smart Assistant (AI Integration)**:
+  - **Seamless Extraction**: Bypasses manual boilerplate by drafting a full plan from your source documents.
+  - **AI Rewrite**: One-click professional refinement for each field to ensure enterprise-level clarity and tone.
+  
+- **Visual & Professional Output**:
+  - **Modern Dashboard**: Sleek, glassmorphic dark-mode UI with intuitive progress tracking.
+  - **Document Preview**: Interactive, formatted preview that acts as a live "paper draft" before export.
+  - **Native Word Export**: Standardized `.docx` file generation for easy sharing and stakeholder approval.
 
-Creating a comprehensive Test Plan manually is often repetitive and time-consuming. QA Leads and Managers spend hours formatting documents instead of focusing on strategy.
+## 🛠️ Technology Stack
 
-**The Test Plan Generator solves this by:**
-1.  **Standardizing Output:** Ensures every test plan follows a professional, consistent format.
-2.  **Saving Time:** Reduces "blank page syndrome" by providing a structured form.
-3.  **Parsing Requirements:** Intelligently extracts text from uploaded requirement docs (PDF/DOCX) to auto-fill the scope.
-4.  **Edit Capability:** Offers a "Preview & Edit" mode to refine content before the final document generation.
+- **Frontend**: Vanilla JavaScript, CSS3 (Glassmorphism), Bootstrap 5.
+- **Backend**: Node.js, Express.
+- **AI/LLM**: Google Gemini (via BLAST protocol).
+- **Parsers**: `pdfjs-dist`, `mammoth` (for DOCX).
+- **Export**: `docx` library.
 
----
+## 📈 Recent Accomplishments
 
-## 🏗️ Architecture
-
-This project is built using the **B.L.A.S.T.** (Blueprint, Link, Architect, Stylize, Trigger) protocol, ensuring a robust and modular design.
-
-### Tech Stack
-*   **Backend:** Node.js, Express.js
-*   **Frontend:** HTML5, Bootstrap 5, Vanilla JS (Fetch API)
-*   **Document Engine:** `docx` (npm) for generating Word documents
-*   **File Parsing:** `pdf-parse` (PDFs) and `mammoth` (DOCX)
-*   **Deployment:** Vercel (Serverless)
-
-### Workflow
-1.  **Input:** User fills out project details (Type, Strategy, Resources) and optionally uploads a spec file.
-2.  **Process:** The server extracts text from the upload and prepares a JSON object.
-3.  **Preview:** The frontend renders a preview, allowing the user to tweak the extracted scope or other details.
-4.  **Generate:** The final JSON is sent to the backend, which constructs the `.docx` file using the `docx` library.
-
----
-
-## 📂 Project Structure
-
-```
-├── public/
-│   ├── index.html        # The User Interface (Form & Preview)
-│   └── css/              # (Optional custom styles)
-├── tools/
-│   ├── generate_plan.js  # Core Logic: Generates the DOCX structure
-│   └── parse_input.js    # (Logic integrated into server.js)
-├── architecture/         # System design & templates
-├── server.js             # Main Express App (API & Routes)
-├── vercel.json           # Vercel Deployment Config
-└── README.md             # Project Documentation
-```
+1.  **Refined Tool Sync**: Added secure "Username/Email" and "API Token" fields with a "Test Connection" feature for Jira.
+2.  **Extraction Engine**: Optimized PDF/DOCX parsing to detect project names, objectives, and test scenarios.
+3.  **Unified Flow**: Implemented a seamless transition from "Analyze" to "Draft Preview," allowing for rapid iteration.
+4.  **UI/UX Overhaul**: Advanced styling for the document preview, including a responsive sidebar, document badges, and structured sectioning.
+5.  **AI Field Rewriter**: Added a "Rewrite with AI" button on every input field to polish and professionalize user-provided or extracted text.
 
 ---
-
-## 🚀 How to Run Locally
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/palkitrathod/TestPlanGenerator_Prod.git
-    cd TestPlanGenerator_Prod
-    ```
-
-2.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Start the Server:**
-    ```bash
-    node server.js
-    ```
-
-4.  **Access the App:**
-    Open `http://localhost:3000` in your browser.
-
----
-
-### Deployment Automation (CI/CD)
-
-This project includes a built-in deployment pipeline.
-
-**To deploy your changes to production:**
-1.  Open PowerShell in the project folder.
-2.  Run the deployment script:
-    ```powershell
-    .\deploy.ps1
-    ```
-3.  Enter a commit message when prompted.
-4.  The script will automatically push to GitHub, which triggers Vercel to build and deploy the new version live.
-
----
-
-## ☁️ Deployment
-
-This project is optimized for **Vercel**.
-1.  Select the repository in Vercel.
-2.  The `vercel.json` file handles the configuration automatically.
-3.  Deploy!
-
----
-
-**Author:** Palkit Rathod
-**Version:** 1.0.0
+*Created by Antigravity AI Assistant*

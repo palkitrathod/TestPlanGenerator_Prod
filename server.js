@@ -16,18 +16,85 @@ Module.prototype.require = function (id) {
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 // using legacy build for node environment compatibility
 const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
 const mammoth = require('mammoth');
 const { generateTestPlan } = require('./tools/generate_plan');
 const { fetchJiraTicket } = require('./tools/jira_reader');
+const { rewriteText } = require('./tools/rewrite_text');
 
 const app = express();
 const port = 3000;
 
-// Configure Multer for uploads (Use 'tmp/' for local/windows compatibility)
-const upload = multer({ dest: 'tmp/' });
+function buildDefaultPlanData(overrides = {}) {
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() + 14);
+
+    return {
+        project_name: "External Sync Project",
+        objective: "Requirements fetched from external tool.",
+        in_scope: "Core features defined in ticket/task.",
+        out_scope: "Items not explicitly captured in the source artifact.",
+        reviewers: "QA Lead",
+        approvers: "Product Owner",
+        methodology: "Agile (Scrum)",
+        testing_types: ["Functional", "Regression"],
+        metrics: "Test coverage > 90%\nCritical defects closed before sign-off.",
+        scenarios: "1. Main Success Path\n2. Exception Handling",
+        test_env: "QA/Staging environment aligned with the latest stable build.",
+        roles: "QA Lead: Planning\nQA Engineer: Execution\nDeveloper: Fix validation",
+        risks: "Dependency on third-party service availability.",
+        criteria: "Entry: Approved build deployed to QA.\nExit: Critical defects closed and planned tests executed.",
+        deliverables: "Test Plan, Test Cases, Defect Report, Execution Summary",
+        start_date: today.toISOString().split('T')[0],
+        end_date: endDate.toISOString().split('T')[0],
+        ...overrides
+    };
+}
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024,
+        files: 5
+    }
+});
+
+async function extractTextFromUpload(file) {
+    const fileName = file.originalname || 'uploaded-file';
+    const mimeType = file.mimetype || 'application/octet-stream';
+    const buffer = file.buffer;
+
+    if (!buffer || !buffer.length) {
+        return '';
+    }
+
+    if (mimeType === 'application/pdf') {
+        const loadingTask = pdfjsLib.getDocument({
+            data: new Uint8Array(buffer),
+            disableFontFace: true,
+        });
+        const doc = await loadingTask.promise;
+        let extractedText = `--- Context from PDF: ${fileName} ---\n`;
+
+        for (let i = 1; i <= doc.numPages; i++) {
+            const page = await doc.getPage(i);
+            const content = await page.getTextContent();
+            const strings = content.items.map(item => item.str);
+            extractedText += strings.join(" ") + "\n";
+        }
+
+        return extractedText;
+    }
+
+    if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const result = await mammoth.extractRawText({ buffer });
+        return `--- Context from DOCX: ${fileName} ---\n${result.value}\n`;
+    }
+
+    return `--- Context from File: ${fileName} ---\n${buffer.toString('utf8')}\n`;
+}
 
 // Middleware
 app.use((req, res, next) => {
@@ -59,35 +126,8 @@ app.post('/preview', upload.array('project_files'), async (req, res) => {
             
             for (const file of req.files) {
                 console.log(`Parsing: ${file.originalname} (${file.mimetype})`);
-                const filePath = file.path;
-
-                if (file.mimetype === 'application/pdf') {
-                    const dataBuffer = fs.readFileSync(filePath);
-                    const loadingTask = pdfjsLib.getDocument({
-                        data: new Uint8Array(dataBuffer),
-                        disableFontFace: true,
-                    });
-                    const doc = await loadingTask.promise;
-                    let extractedText = `--- Context from PDF: ${file.originalname} ---\n`;
-
-                    for (let i = 1; i <= doc.numPages; i++) {
-                        const page = await doc.getPage(i);
-                        const content = await page.getTextContent();
-                        const strings = content.items.map(item => item.str);
-                        extractedText += strings.join(" ") + "\n";
-                    }
-                    fileContent += extractedText + "\n\n";
-
-                } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-                    const result = await mammoth.extractRawText({ path: filePath });
-                    fileContent += `--- Context from DOCX: ${file.originalname} ---\n${result.value}\n\n`;
-                } else {
-                    const text = fs.readFileSync(filePath, 'utf8');
-                    fileContent += `--- Context from File: ${file.originalname} ---\n${text}\n\n`;
-                }
-
-                // Clean up uploaded file
-                fs.unlinkSync(filePath);
+                fileContent += await extractTextFromUpload(file);
+                fileContent += "\n";
             }
         }
 
@@ -133,7 +173,7 @@ app.post('/preview', upload.array('project_files'), async (req, res) => {
         ], "All core functional modules mentioned in the BRD context.");
 
         // Return JSON for the frontend to render
-        res.json({
+        res.json(buildDefaultPlanData({
             ...formData,
             project_name: projectName,
             objective: objective,
@@ -142,7 +182,7 @@ app.post('/preview', upload.array('project_files'), async (req, res) => {
             risks: risks,
             criteria: "Entry: Environment Ready & Approved build. Exit: All TCs executed & Defects closed.",
             uploaded_file_content: fileContent
-        });
+        }));
 
     } catch (error) {
         console.error("Error generating preview:", error);
@@ -179,29 +219,52 @@ app.post('/validate-connection', async (req, res) => {
     }
 });
 
+async function handleRewriteField(req, res) {
+    try {
+        const { text, fieldName } = req.body;
+        if (!String(text || '').trim()) {
+            return res.status(400).json({ success: false, error: 'Text is required for rewrite.' });
+        }
+
+        const rewritten = await rewriteText(text, fieldName);
+        res.json({ success: true, rewritten });
+    } catch (error) {
+        console.error('Error rewriting field:', error.message);
+        res.status(500).json({ success: false, error: error.message || 'Failed to rewrite field.' });
+    }
+}
+
+app.post('/rewrite-field', handleRewriteField);
+app.post('/api/rewrite-field', handleRewriteField);
+
 
 // Step 1b: Sync Tool Data (Jira, ADO, etc.) & Map to Test Plan
 app.post('/sync-tool-data', upload.none(), async (req, res) => {
     try {
         const { tool, url, user, token, id } = req.body;
 
-        let planData = {
-            project_name: "External Sync Project",
-            objective: "Requirements fetched from external tool.",
-            in_scope: "Core features defined in ticket/task.",
-            scenarios: "1. Main Success Path\n2. Exception Handling",
-            risks: "Dependency on third-party service availability."
-        };
+        let planData = buildDefaultPlanData();
 
         if (tool === 'jira' && id) {
             const jiraData = await fetchJiraTicket(url, user, token, id);
-            planData = {
-                project_name: jiraData.fields.project.name + " - " + jiraData.key,
-                objective: jiraData.fields.summary + "\n\n" + (jiraData.fields.description || ""),
-                in_scope: "Testing requirements for " + jiraData.key,
-                scenarios: "Verify: " + jiraData.fields.summary,
-                risks: "Extracted from Jira priority: " + (jiraData.fields.priority?.name || 'Medium')
-            };
+            planData = buildDefaultPlanData({
+                project_name: jiraData.project_name || id,
+                objective: jiraData.overview || jiraData.objective,
+                in_scope: jiraData.inscope || jiraData.in_scope,
+                out_scope: jiraData.outscope || jiraData.out_scope,
+                methodology: "Agile (Scrum)",
+                testing_types: ["Functional", "Regression", "API"],
+                metrics: "Acceptance criteria coverage = 100%\nCritical and high defects resolved before sign-off.",
+                scenarios: jiraData.strategy || jiraData.scenarios,
+                test_env: jiraData.env || jiraData.test_env,
+                risks: jiraData.risks,
+                criteria: jiraData.process || jiraData.criteria,
+                reviewers: jiraData.meta?.reporter || "QA Lead",
+                approvers: "QA Lead / Product Owner",
+                deliverables: "Test Plan, Linked Jira defects, Execution Summary",
+                roles: "QA Lead: Planning and sign-off\nQA Engineer: Test execution\nDeveloper: Defect fixes",
+                schedule: jiraData.schedule
+            });
         }
 
         res.json({ success: true, data: planData });
