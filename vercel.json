@@ -19,6 +19,10 @@
       "handle": "filesystem"
     },
     {
+      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|webp))",
+      "dest": "/public/$1"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/$1"
     },
