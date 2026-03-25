@@ -413,12 +413,8 @@ async function handleAutoProcessing(type) {
         extractedData = data.data || data; 
         
         hideLoader();
-        if (type === 'tool') {
-            fillFormFields(extractedData);
-            finalizeFromAuto();
-        } else {
-            showEnhancementPrompt(sourceName);
-        }
+        fillFormFields(extractedData);
+        finalizeFromAuto();
     } catch (err) {
         hideLoader();
         alert('Extraction failed: ' + err.message);
