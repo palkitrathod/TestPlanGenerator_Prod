@@ -1,6 +1,6 @@
 # GEMINI - Project Constitution
 ## Core Identity
-- **Project Name**: Test Plan Generator (TBC)
+- **Project Name**: Test Plan Generator by Palkit Rathod(TBC)
 - **Role**: System Pilot using BLAST protocol.
 
 ## 1. Discovery (The "Why")

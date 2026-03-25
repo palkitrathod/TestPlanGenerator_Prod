@@ -21,7 +21,8 @@ const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
 const mammoth = require('mammoth');
 const { generateTestPlan } = require('./tools/generate_plan');
 const { fetchJiraTicket } = require('./tools/jira_reader');
-const { rewriteText } = require('./tools/rewrite_text');
+const { fetchAdoWorkItem, fetchAsanaTask, fetchNotionPage } = require('./tools/external_readers');
+const { rewriteText, analyzeDocumentWithAI } = require('./tools/rewrite_text');
 
 const app = express();
 const port = 3000;
@@ -93,7 +94,7 @@ async function extractTextFromUpload(file) {
             const page = await doc.getPage(i);
             const content = await page.getTextContent();
             const strings = content.items.map(item => item.str);
-            extractedText += strings.join(" ") + "\n";
+            extractedText += strings.join("\n") + "\n";
         }
 
         return extractedText;
@@ -129,7 +130,7 @@ app.get('/', (req, res) => {
 app.post('/preview', async (req, res) => {
     try {
         await runUpload(req, res, upload.array('project_files'));
-
+        console.log(`Processing preview request. Files: ${req.files ? req.files.length : 0}`);
         const formData = req.body;
         let fileContent = "";
 
@@ -146,6 +147,7 @@ app.post('/preview', async (req, res) => {
 
         // Smart Extraction Logic for the Test Plan
         const extractField = (patterns, fallback) => {
+            if (!fileContent || !fileContent.trim()) return fallback;
             for (const regex of patterns) {
                 const match = fileContent.match(regex);
                 if (match && match[1]) return match[1].trim();
@@ -153,37 +155,49 @@ app.post('/preview', async (req, res) => {
             return fallback;
         };
 
-        const projectName = extractField([
+        let projectName = extractField([
             /Project:\s*(.*)/i, 
             /Project Title:\s*(.*)/i, 
             /Requirement Name:\s*(.*)/i,
             /Document Name:\s*(.*)/i
         ], formData.project_name || "Enterprise Project");
 
-        const objective = extractField([
+        let objective = extractField([
             /Objective:\s*(.*)/i, 
             /Goals:\s*(.*)/i, 
             /Purpose:\s*(.*)/i,
             /Introduction:\s*(.*)/i
-        ], "The goal is to verify systemic logic and ensure user requirements are met.");
+        ], formData.objective || "The goal is to verify systemic logic and ensure user requirements are met.");
 
-        const scenarios = extractField([
+        let scenarios = extractField([
             /Scenario:\s*(.*)/ig, 
             /Steps:\s*(.*)/ig, 
             /Use Cases:\s*(.*)/ig
-        ], "1. Success Flow\n2. Validation Checks\n3. Negative Input Handling\n4. Performance Check");
+        ], formData.scenarios || "1. Success Flow\n2. Validation Checks\n3. Negative Input Handling\n4. Performance Check");
 
-        const risks = extractField([
+        let risks = extractField([
             /Risk:\s*(.*)/i, 
             /Mitigation:\s*(.*)/i, 
             /Assumptions:\s*(.*)/i
-        ], "Potential delays in API integration, Hardware environment availability.");
+        ], formData.risks || "Potential delays in API integration, Hardware environment availability.");
 
-        const inScope = extractField([
-            /In Scope:\s*(.*)/i, 
+        let inScope = extractField([
             /Scope Description:\s*(.*)/i, 
             /Features:\s*(.*)/i
-        ], "All core functional modules mentioned in the BRD context.");
+        ], formData.in_scope || "All core functional modules mentioned in the BRD context.");
+
+        const isDefault = (projectName === "Enterprise Project") || (objective && objective.includes("verify systemic logic"));
+        if (isDefault && fileContent.length > 50) {
+            console.log("Regex results sparse. Triggering AI document analysis...");
+            const aiData = await analyzeDocumentWithAI(fileContent);
+            if (aiData) {
+                if (aiData.project_name) projectName = aiData.project_name;
+                if (aiData.objective) objective = aiData.objective;
+                if (aiData.scenarios) scenarios = aiData.scenarios;
+                if (aiData.risks) risks = aiData.risks;
+                if (aiData.in_scope) inScope = aiData.in_scope;
+            }
+        }
 
         // Return JSON for the frontend to render
         res.json(buildDefaultPlanData({
@@ -193,7 +207,7 @@ app.post('/preview', async (req, res) => {
             in_scope: inScope,
             scenarios: scenarios,
             risks: risks,
-            criteria: "Entry: Environment Ready & Approved build. Exit: All TCs executed & Defects closed.",
+            criteria: projectName.includes("Sync") ? "Entry: Jira Ticket Ready. Exit: All criteria met." : (formData.criteria || "Entry: Build Deployed. Exit: All TCs Passed."),
             uploaded_file_content: fileContent
         }));
 
@@ -220,9 +234,13 @@ app.post('/preview', async (req, res) => {
 // New Connection Validation Endpoint
 app.post('/validate-connection', async (req, res) => {
     const { tool, url, user, token } = req.body;
+    console.log(`Validating connection for ${tool} - URL: ${url}`);
+
     try {
+        const cleanUrl = (url || '').replace(/\/$/, '');
+        
         if (tool === 'jira') {
-            const testUrl = `${url.replace(/\/$/, '')}/rest/api/2/myself`;
+            const testUrl = `${cleanUrl}/rest/api/2/myself`;
             const response = await fetch(testUrl, {
                 method: 'GET',
                 headers: {
@@ -230,16 +248,68 @@ app.post('/validate-connection', async (req, res) => {
                     'Accept': 'application/json'
                 }
             });
-            if (response.ok) {
+            const body = await response.json().catch(() => ({}));
+
+            if (response.ok && (body.accountId || body.emailAddress || body.name)) {
                 return res.json({ success: true });
-            } else {
-                return res.json({ success: false, error: `Auth failed (${response.status}). Check email/token.` });
             }
+            return res.json({ success: false, error: `Auth failed (${response.status}). Ensure URL and credentials match a valid Jira account.` });
         }
-        // Mock success for other tools for now
-        res.json({ success: true });
+
+        if (tool === 'azure') {
+            const testUrl = `${cleanUrl}/_apis/projects?api-version=2.0`;
+            const response = await fetch(testUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Basic ${Buffer.from(`:${token}`).toString('base64')}`,
+                    'Accept': 'application/json'
+                }
+            });
+            const body = await response.json().catch(() => ({}));
+            
+            if (response.ok && body.value) {
+                return res.json({ success: true });
+            }
+            return res.json({ success: false, error: `Azure DevOps Auth failed (${response.status}). Verify PAT and Org URL.` });
+        }
+
+        if (tool === 'asana') {
+            const response = await fetch('https://app.asana.com/api/1.0/users/me', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+            const body = await response.json().catch(() => ({}));
+            
+            if (response.ok && body.data && body.data.gid) {
+                return res.json({ success: true });
+            }
+            return res.json({ success: false, error: `Asana Auth failed (${response.status}). Token might be invalid.` });
+        }
+
+        if (tool === 'notion') {
+            const response = await fetch('https://api.notion.com/v1/users/me', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Notion-Version': '2022-06-28',
+                    'Accept': 'application/json'
+                }
+            });
+            const body = await response.json().catch(() => ({}));
+            
+            if (response.ok && body.object === 'user') {
+                return res.json({ success: true });
+            }
+            return res.json({ success: false, error: `Notion API error (${response.status}). Check Integration Token and permissions.` });
+        }
+
+        res.json({ success: false, error: 'Unrecognized tool: ' + tool });
     } catch (error) {
-        res.json({ success: false, error: error.message });
+        console.error('Validation Connection Error:', error);
+        res.json({ success: false, error: 'Connection error: ' + error.message });
     }
 });
 
@@ -289,6 +359,12 @@ app.post('/sync-tool-data', upload.none(), async (req, res) => {
                 roles: "QA Lead: Planning and sign-off\nQA Engineer: Test execution\nDeveloper: Defect fixes",
                 schedule: jiraData.schedule
             });
+        } else if (tool === 'azure' && id) {
+            planData = await fetchAdoWorkItem(url, token, id);
+        } else if (tool === 'asana' && id) {
+            planData = await fetchAsanaTask(token, id);
+        } else if (tool === 'notion' && id) {
+            planData = await fetchNotionPage(token, id);
         }
 
         res.json({ success: true, data: planData });

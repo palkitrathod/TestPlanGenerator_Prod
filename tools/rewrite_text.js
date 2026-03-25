@@ -79,50 +79,31 @@ async function rewriteWithHuggingFace(text, fieldName = '') {
 }
 
 async function rewriteWithPollinations(text, fieldName = '') {
-    const fieldLabel = String(fieldName || 'test plan field').replace(/_/g, ' ');
-    const prompt = [
-        'Rewrite the following software QA content.',
-        'Preserve meaning and factual details.',
-        'Improve clarity and professionalism.',
-        'Preserve bullets, numbering, and line breaks where applicable.',
-        'Return only the rewritten text.',
-        `Field: ${fieldLabel}`,
-        '',
-        text
-    ].join('\n');
+    const cleanText = String(text || '').trim();
+    if (!cleanText) return null;
 
-    const response = await fetch('https://text.pollinations.ai/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model: process.env.POLLINATIONS_REWRITE_MODEL || 'openai',
-            messages: [
-                {
-                    role: 'system',
-                    content: 'You rewrite software QA and test planning content. Preserve meaning, keep factual content unchanged, improve clarity and professionalism, and return only the rewritten text.'
-                },
-                {
-                    role: 'user',
-                    content: prompt
-                }
-            ]
-        })
-    });
+    try {
+        const fieldLabel = String(fieldName || 'content').replace(/_/g, ' ');
+        const prompt = encodeURIComponent(`Rewrite this professional software QA ${fieldLabel} for clarity. Return only the rewritten text: ${cleanText}`);
+        
+        // Use the simplified GET API for reliable text-only responses
+        const response = await fetch(`https://text.pollinations.ai/${prompt}?model=openai&cache=false`, {
+            method: 'GET',
+            headers: { 'Accept': 'text/plain' }
+        });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Pollinations rewrite failed (${response.status}): ${errorText.substring(0, 200)}`);
+        if (!response.ok) return null;
+
+        const result = await response.text();
+        if (!result || result.toLowerCase().includes('<!doctype html') || result.toLowerCase().includes('<html')) {
+            return null; // Skip if we got HTML docs back
+        }
+
+        return result.trim();
+    } catch (error) {
+        console.error(`Pollinations Fetch Error: ${error.message}`);
+        return null;
     }
-
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-        const data = await response.json();
-        return data.text?.trim() || data.choices?.[0]?.message?.content?.trim() || null;
-    }
-
-    return (await response.text()).trim() || null;
 }
 
 async function rewriteWithGroq(text, fieldName = '') {
@@ -167,31 +148,104 @@ async function rewriteWithGroq(text, fieldName = '') {
 async function rewriteText(text, fieldName = '') {
     if (!String(text || '').trim()) return '';
 
+    const cleanModelOutput = (res) => {
+        if (!res) return res;
+        
+        let cleaned = res.trim();
+        
+        // 1. Extract content from the first triple-backtick block if present
+        const codeBlockMatch = cleaned.match(/```(?:[a-z]*)\r?\n?([\s\S]*?)```/i);
+        if (codeBlockMatch) {
+            cleaned = codeBlockMatch[1].trim();
+        }
+
+        // 2. Remove common conversational prefixes
+        const commonPrefixes = [
+            /^(Here is the rewritten text:?)/i,
+            /^(The rewritten (text|content) is:?)/i,
+            /^(Rewritten (text|content):?)/i,
+            /^(Sure, here is the rewritten (text|content):?)/i,
+            /^(Certainly,? here is the refined (text|content):?)/i,
+            /^(I have rewritten the (text|content) for you:?)/i
+        ];
+        
+        for (const prefix of commonPrefixes) {
+            cleaned = cleaned.replace(prefix, '').trim();
+        }
+
+        // 3. Final cleanup of any remaining backticks
+        cleaned = cleaned.replace(/```/g, '');
+        
+        return cleaned.trim();
+    };
+
     try {
         const pollinationsResult = await rewriteWithPollinations(text, fieldName);
-        if (pollinationsResult) return pollinationsResult;
+        if (pollinationsResult) return cleanModelOutput(pollinationsResult);
     } catch (error) {
-        console.error(error.message);
+        console.error(`Pollinations error: ${error.message}`);
     }
 
     try {
         const hfResult = await rewriteWithHuggingFace(text, fieldName);
-        if (hfResult) return hfResult;
+        if (hfResult) return cleanModelOutput(hfResult);
     } catch (error) {
-        console.error(error.message);
+        console.error(`Hugging Face error: ${error.message}`);
     }
 
     try {
         const groqResult = await rewriteWithGroq(text, fieldName);
-        if (groqResult) return groqResult;
+        if (groqResult) return cleanModelOutput(groqResult);
     } catch (error) {
-        console.error(error.message);
+        console.error(`Groq error: ${error.message}`);
     }
 
+    // Final fallback to heuristic rewrite
     return heuristicRewrite(text, fieldName);
+}
+
+async function analyzeDocumentWithAI(fileContent) {
+    if (!fileContent || fileContent.length < 50) return null;
+    try {
+        const textToAnalyze = fileContent.substring(0, 3500);
+        const promptText = `Analyze this software requirement document and extract key details. 
+Return ONLY a valid JSON object with EXACTLY these keys:
+{
+  "project_name": "string",
+  "objective": "string",
+  "scenarios": "string (multiline list)",
+  "risks": "string",
+  "in_scope": "string"
+}
+DOCUMENT CONTENT:
+${textToAnalyze}`;
+
+        const prompt = encodeURIComponent(promptText);
+        const response = await fetch(`https://text.pollinations.ai/${prompt}?model=openai&cache=false`, {
+            method: 'GET'
+        });
+
+        if (!response.ok) return null;
+        let result = await response.text();
+        
+        // Strip markdown if AI returned it
+        result = result.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        try {
+            return JSON.parse(result);
+        } catch (e) {
+            console.error("AI Analysis Parse Error:", e);
+            return null;
+        }
+    } catch (err) {
+        console.error("AI Analysis Error:", err);
+        return null;
+    }
 }
 
 module.exports = {
     heuristicRewrite,
-    rewriteText
+    rewriteText,
+    analyzeDocumentWithAI
 };
+

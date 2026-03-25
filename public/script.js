@@ -4,6 +4,18 @@ let selectedEntryMode = 'manual';
 let extractedData = null;
 let latestPreviewData = null;
 
+function showLoader(text) {
+    const overlay = document.getElementById('loadingOverlay');
+    const loaderText = document.getElementById('loaderText');
+    if (loaderText && text) loaderText.innerText = text;
+    if (overlay) overlay.style.display = 'flex';
+}
+
+function hideLoader() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
 function normalizeToArray(value) {
     if (Array.isArray(value)) return value;
     if (typeof value === 'string' && value.trim()) {
@@ -281,19 +293,54 @@ function selectTool(tool) {
     const fields = document.getElementById('toolFields');
     const urlLabel = document.getElementById('toolUrlLabel');
     const keyLabel = document.getElementById('toolKeyLabel');
+    const urlInput = document.getElementById('toolUrl');
+    const issueIdInput = document.getElementById('issueId');
 
     fields.classList.remove('d-none');
 
-    const labels = {
-        jira: { url: 'Atlassian URL', key: 'API Token' },
-        azure: { url: 'Org/Project URL', key: 'PAT Token' },
-        asana: { url: 'Workspace Name', key: 'Personal Access Token' },
-        notion: { url: 'Workspace Link', key: 'Integration Secret' }
+    const config = {
+        jira: { 
+            url: 'Atlassian URL', 
+            key: 'API Token', 
+            urlPlaceholder: 'https://org.atlassian.net', 
+            idLabel: 'Jira Issue Key', 
+            idPlaceholder: 'PROJ-123' 
+        },
+        azure: { 
+            url: 'ADO Org URL', 
+            key: 'Personal Access Token', 
+            urlPlaceholder: 'https://dev.azure.com/org', 
+            idLabel: 'Work Item ID', 
+            idPlaceholder: '456' 
+        },
+        asana: { 
+            url: 'Workspace Name (Optional)', 
+            key: 'Access Token', 
+            urlPlaceholder: 'Workspace ID', 
+            idLabel: 'Task ID', 
+            idPlaceholder: '123456789' 
+        },
+        notion: { 
+            url: 'Database ID (Optional)', 
+            key: 'Integration Secret', 
+            urlPlaceholder: 'Database UUID', 
+            idLabel: 'Page ID', 
+            idPlaceholder: 'a8b9c... (32 chars)' 
+        }
     };
 
-    const config = labels[tool] || { url: 'URL / Workspace', key: 'API Key' };
-    urlLabel.innerText = config.url;
-    keyLabel.innerText = config.key;
+    const toolConfig = config[tool] || { url: 'Connection URL', key: 'API Key', urlPlaceholder: '', idLabel: 'Item ID', idPlaceholder: '' };
+    
+    urlLabel.innerText = toolConfig.url;
+    keyLabel.innerText = toolConfig.key;
+    urlInput.placeholder = toolConfig.urlPlaceholder;
+    
+    // Find the ID label span if it exists or use generic
+    const idLabelEl = document.querySelector('label[for="issueId"]') || document.querySelector('#issueId').previousElementSibling;
+    if (idLabelEl) {
+        idLabelEl.innerText = toolConfig.idLabel;
+    }
+    issueIdInput.placeholder = toolConfig.idPlaceholder;
 }
 
 async function testToolConnection() {
@@ -366,11 +413,41 @@ async function handleAutoProcessing(type) {
         extractedData = data.data || data; 
         
         hideLoader();
-        finalizeFromAuto(); // Go directly to preview
+        if (type === 'tool') {
+            fillFormFields(extractedData);
+            finalizeFromAuto();
+        } else {
+            showEnhancementPrompt(sourceName);
+        }
     } catch (err) {
         hideLoader();
         alert('Extraction failed: ' + err.message);
     }
+}
+
+function fillFormFields(data) {
+    if (!data) return;
+    const form = document.getElementById('planForm');
+    Object.keys(data).forEach(key => {
+        const inputs = form.querySelectorAll(`[name="${key}"]`);
+        if (!inputs.length) return;
+
+        const value = data[key];
+
+        if (inputs[0].type === 'checkbox') {
+            const selectedValues = normalizeToArray(value);
+            inputs.forEach(input => {
+                input.checked = selectedValues.includes(input.value);
+            });
+            return;
+        }
+
+        const input = inputs[0];
+        if (input) {
+            input.value = Array.isArray(value) ? value.join(', ') : (value || '');
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    });
 }
 
 function showEnhancementPrompt(source) {
@@ -380,33 +457,9 @@ function showEnhancementPrompt(source) {
 
 function startEnhancement() {
     document.getElementById('enhancementPrompt').classList.add('d-none');
-    // Pre-fill form with extracted data
-    if (extractedData) {
-        const form = document.getElementById('planForm');
-        Object.keys(extractedData).forEach(key => {
-            const inputs = form.querySelectorAll(`[name="${key}"]`);
-            if (!inputs.length) return;
-
-            const value = extractedData[key];
-
-            if (inputs[0].type === 'checkbox') {
-                const selectedValues = normalizeToArray(value);
-                inputs.forEach(input => {
-                    input.checked = selectedValues.includes(input.value);
-                });
-                return;
-            }
-
-            const input = inputs[0];
-            if (input && (!input.value || input.value === '')) {
-                input.value = Array.isArray(value) ? value.join(', ') : value;
-            }
-        });
-        
-        // Move to Step 1 of the wizard
-        currentStep = 1;
-        updateStepUI();
-    }
+    fillFormFields(extractedData);
+    currentStep = 1;
+    updateStepUI();
 }
 
 function finalizeFromAuto() {
@@ -701,13 +754,30 @@ async function downloadDocx() {
         objective: document.querySelector('[name="objective"]')?.value || '',
         in_scope: document.querySelector('[name="in_scope"]')?.value || '',
         out_scope: document.querySelector('[name="out_scope"]')?.value || '',
+        reviewers: document.querySelector('[name="reviewers"]')?.value || '',
+        approvers: document.querySelector('[name="approvers"]')?.value || '',
         methodology: document.querySelector('[name="methodology"]')?.value || '',
         metrics: document.querySelector('[name="metrics"]')?.value || '',
         scenarios: document.querySelector('[name="scenarios"]')?.value || '',
         test_env: document.querySelector('[name="test_env"]')?.value || '',
+        roles: document.querySelector('[name="roles"]')?.value || '',
         risks: document.querySelector('[name="risks"]')?.value || '',
-        criteria: document.querySelector('[name="criteria"]')?.value || ''
+        criteria: document.querySelector('[name="criteria"]')?.value || '',
+        deliverables: document.querySelector('[name="deliverables"]')?.value || '',
+        start_date: document.querySelector('[name="start_date"]')?.value || '',
+        end_date: document.querySelector('[name="end_date"]')?.value || ''
     };
+    
+    // Add testing_types if not manually overridden by latestPreviewData
+    if (!latestPreviewData) {
+        const types = Array.from(document.querySelectorAll('[name="testing_types"]:checked')).map(cb => cb.value);
+        if (types.length) previewData.testing_types = types;
+    }
+    
+    // Ensure schedule is compiled if missing
+    if (!previewData.schedule && previewData.start_date) {
+        previewData.schedule = `Start Date: ${previewData.start_date}\nEnd Date: ${previewData.end_date || 'TBD'}`;
+    }
     
     const response = await fetch('/generate-final', {
         method: 'POST',
@@ -721,4 +791,10 @@ async function downloadDocx() {
     a.href = url;
     a.download = `Test_Plan_${previewData.project_name.replace(/\s+/g, '_')}.docx`;
     a.click();
+}
+
+function handleFileSelect(input) {
+    const list = document.getElementById('fileList');
+    if (!list) return;
+    list.innerHTML = Array.from(input.files).map(f => `<div class='text-primary mb-1'><i class='fas fa-check-circle me-2'></i>${f.name}</div>`).join('');
 }

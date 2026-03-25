@@ -90,7 +90,7 @@ async function generateTestPlan(data) {
                     children: [
                         new TextRun({ text: `Version: ${data.version || '1.0.0'}`, font: "Calibri", size: 24 }),
                         new TextRun({ text: "\n", break: 1 }),
-                        new TextRun({ text: `Date: ${new Date().toLocaleDateString()}`, font: "Calibri", size: 24 }),
+                        new TextRun({ text: `Date: ${new Date().toISOString().split('T')[0]}`, font: "Calibri", size: 24 }),
                         new TextRun({ text: "\n", break: 1 }),
                         new TextRun({ text: `Status: Final`, font: "Calibri", size: 24 })
                     ],
